@@ -19,10 +19,12 @@ let isDragging = false;
 let isMouseDown = false;
 let movementInterval = null;
 let sliderTimeout = null;
+let activeTouches = new Set();
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
 const slider = document.getElementById('slider');
+const cellCount = document.getElementById('cell-count');
 
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
@@ -49,15 +51,31 @@ const buttonKeyMap = {
     ';': backspaceBtn
 };
 
+const keyButtonMap = {
+    'dot1-btn': 'f',
+    'dot2-btn': 'd',
+    'dot3-btn': 's',
+    'dot4-btn': 'j',
+    'dot5-btn': 'k',
+    'dot6-btn': 'l',
+    'space-btn': 'g',
+    'linespace-btn': 'a',
+    'backspace-btn': ';'
+};
+
 function updateGrid(newCell, row, col) {
     grid[row][col] = newCell;
     renderBrailleGrid();
 }
 
+function updateCellCount() {
+    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
+}
+
 function moveCursor(rowDelta, colDelta, rotate = false) {
     cursor.row = Math.max(0, Math.min(ROWS - 1, cursor.row + rowDelta));
     cursor.col = Math.max(0, Math.min(COLS - 1, cursor.col + colDelta));
-    cursorPosition.innerText = `Cursor position: (${cursor.row}, ${cursor.col})`;
+    updateCellCount();
     slider.value = cursor.col;  // Update slider to match cursor position
     renderBrailleGrid();
     if (rotate) {
@@ -231,6 +249,44 @@ function handleDotButtonRelease() {
     }
 }
 
+// Touch event handlers
+function handleTouchStart(e) {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(touch => {
+        const target = touch.target.closest('.key');
+        if (target) {
+            const key = keyButtonMap[target.id];
+            if (key) {
+                activeTouches.add(touch.identifier);
+                const keydownEvent = new KeyboardEvent('keydown', { key: key });
+                document.dispatchEvent(keydownEvent);
+            }
+        }
+    });
+}
+
+function handleTouchEnd(e) {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(touch => {
+        if (activeTouches.has(touch.identifier)) {
+            activeTouches.delete(touch.identifier);
+            if (activeTouches.size === 0) {
+                handleDotButtonRelease();
+            }
+        }
+    });
+}
+
+function handleTouchCancel(e) {
+    e.preventDefault();
+    Array.from(e.changedTouches).forEach(touch => {
+        activeTouches.delete(touch.identifier);
+    });
+    if (activeTouches.size === 0) {
+        handleDotButtonRelease();
+    }
+}
+
 // Event listeners
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
@@ -243,7 +299,7 @@ eraseModeBtn.addEventListener('click', () => {
 
 slider.addEventListener('input', (e) => {
     cursor.col = parseInt(e.target.value);
-    cursorPosition.innerText = `Cursor position: (${cursor.row}, ${cursor.col})`;
+    updateCellCount();
     renderBrailleGrid();
     rotateSlider();
 });
@@ -254,9 +310,18 @@ dotButtons.forEach((btn, index) => {
     btn.addEventListener('mousedown', () => handleDotButtonClick(index));
     btn.addEventListener('mouseup', handleDotButtonRelease);
     btn.addEventListener('mouseleave', handleDotButtonRelease);
+    btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+    btn.addEventListener('touchend', handleTouchEnd, { passive: false });
+    btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 });
 
 // Event listeners for other buttons
+[spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
+    btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+    btn.addEventListener('touchend', handleTouchEnd, { passive: false });
+    btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+});
+
 spaceBtn.addEventListener('click', () => {
     const keydownEvent = new KeyboardEvent('keydown', { key: 'g' });
     const keyupEvent = new KeyboardEvent('keyup', { key: 'g' });
@@ -287,4 +352,5 @@ instructionsToggle.addEventListener('click', () => {
 
 // Initialize the app
 slider.value = cursor.col;
+updateCellCount();
 renderBrailleGrid();

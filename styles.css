@@ -100,6 +100,7 @@ body {
     padding: 1px 16px;
     background-color: #262626;
     border-radius: 4px;
+    position: relative;
 }
 
 .slider {
@@ -147,6 +148,14 @@ body {
 
 .slider.rotated::-moz-range-thumb {
     transform: rotate(0deg);
+}
+
+.cell-count {
+    position: absolute;
+    bottom: -20px;
+    right: 16px;
+    font-size: 14px;
+    color: #ffd700;
 }
 
 .key-container {
@@ -236,20 +245,6 @@ body {
     align-items: center;
 }
 
-.cursor-position {
-    font-size: 14px;
-    margin-top: 16px;
-    text-align: left;
-}
-
-@media (max-width: 640px) {
-    .braille-dot {
-        width: 1.2vw;
-        height: 1.2vw;
-        margin: 0.3vw;
-    }
-}
-
 .instructions-drawer {
     position: fixed;
     bottom: 0;
@@ -302,4 +297,12 @@ body {
     color: #767676;
     font-size: 1.2em;
     margin-right: 10px;
+}
+
+@media (max-width: 640px) {
+    .braille-dot {
+        width: 1.2vw;
+        height: 1.2vw;
+        margin: 0.3vw;
+    }
 }
