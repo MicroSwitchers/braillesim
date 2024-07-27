@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braille Writer Simulator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="braille-writer-app" class="card">
+        <div class="card-header">
+            <h2 id="braille-writer-simulator" class="card-title">Braille Writer Simulator</h2>
+        </div>
+        <div class="card-content">
+            <div id="braille-grid" class="braille-grid"></div>
+            <div class="slider-container">
+                <input type="range" id="slider" min="0" max="22" value="0" class="slider">
+            </div>
+            <div class="key-container">
+                <button class="key round-key" id="linespace-btn">LS (a)</button>
+                <button class="key dot-key" id="dot3-btn">3 (s)</button>
+                <button class="key dot-key" id="dot2-btn">2 (d)</button>
+                <button class="key dot-key" id="dot1-btn">1 (f)</button>
+                <button class="key space-key" id="space-btn">Space (G/H)</button>
+                <button class="key dot-key" id="dot4-btn">4 (j)</button>
+                <button class="key dot-key" id="dot5-btn">5 (k)</button>
+                <button class="key dot-key" id="dot6-btn">6 (l)</button>
+                <button class="key round-key" id="backspace-btn">BS (;)</button>
+                <button class="key round-key" id="erase-mode-btn">Erase Mode</button>
+            </div>
+            <div id="cursor-position" class="cursor-position">Cursor position: (0, 0)</div>
+        </div>
+    </div>
+    <div id="instructions-drawer" class="instructions-drawer">
+        <button id="instructions-toggle" class="instructions-toggle">Instructions</button>
+        <div class="instructions-content">
+            <ul>
+                <li>Key/Dot: F (1), D (2), S (3), J (4), K (5), L (6)</li>
+                <li>Space - G and/or H</li>
+                <li>Line Spacer - A</li>
+                <li>Backspacer - ;</li>
+                <li>Carriage Lever - ← → Arrow keys or slider</li>
+                <li>Braille Eraser - Erase Mode + click to flatten dots</li>
+                <li>Paper feeder Knob - ↑ ↓ Arrows</li>
+            </ul>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
