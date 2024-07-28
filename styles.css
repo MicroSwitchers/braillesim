@@ -112,7 +112,7 @@ body {
 
 @media (max-width: 640px) {
     .braille-grid {
-        height: calc(3 * 1.5em); /* Adjust to make it 3 lines tall on small screens */
+        height: 120px; /* Approximate height for 3 lines of Braille cells */
     }
 }
 
@@ -360,4 +360,32 @@ body {
     color: #767676;
     font-size: 1.2em;
     margin-right: 10px;
+}
+
+@media (max-width: 640px) {
+    .braille-grid {
+        height: 120px; /* Approximate height for 3 lines of Braille cells */
+    }
+    .braille-row {
+        margin-bottom: 4px;
+    }
+    .key {
+        padding: 0.25em;
+    }
+    .space-key {
+        width: 100px;
+        height: 40px;
+    }
+    .round-key {
+        width: 40px;
+        height: 40px;
+    }
+    .dot-key {
+        width: 50px;
+        height: 70px;
+    }
+    .small-button {
+        font-size: 10px;
+        padding: 3px 5px;
+    }
 }
