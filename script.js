@@ -1,4 +1,4 @@
-let ROWS = 20;
+const ROWS = 20;
 const COLS = 23;
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
 const keyMap = {
@@ -37,6 +37,7 @@ const dot5Btn = document.getElementById('dot5-btn');
 const dot6Btn = document.getElementById('dot6-btn');
 const backspaceBtn = document.getElementById('backspace-btn');
 const eraseModeBtn = document.getElementById('erase-mode-btn');
+const fullscreenBtn = document.getElementById('fullscreen-btn');
 
 const buttonKeyMap = {
     'f': dot1Btn,
@@ -287,37 +288,6 @@ function handleTouchCancel(e) {
     }
 }
 
-// Device detection
-function detectDevice() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    const isTablet = /(ipad|tablet|(android(?!.*mobile))|(windows(?!.*phone)(.*touch))|kindle|playbook|silk|(puffin(?!.*(IP|AP|WP))))/.test(userAgent);
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    if (isTablet) {
-        document.body.classList.add('tablet');
-    } else if (isMobile) {
-        document.body.classList.add('mobile');
-    } else {
-        document.body.classList.add('desktop');
-    }
-}
-
-// Adjust app based on device
-function adjustApp() {
-    const isMobileOrTablet = document.body.classList.contains('mobile') || document.body.classList.contains('tablet');
-    
-    if (isMobileOrTablet) {
-        // Adjust the grid size for mobile/tablet
-        ROWS = 10;
-        grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
-        
-        // Disable hover effects for touch devices
-        document.querySelectorAll('.key').forEach(key => {
-            key.classList.add('touch-device');
-        });
-    }
-}
-
 // Event listeners
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
@@ -381,6 +351,18 @@ instructionsToggle.addEventListener('click', () => {
     instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions' : 'Instructions';
 });
 
+// Fullscreen button functionality
+fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        }
+    }
+});
+
 // Initialize the app
-detectDevice();
-adjust
+slider.value = cursor.col;
+updateCellCount();
+renderBrailleGrid();
