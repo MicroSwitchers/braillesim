@@ -178,6 +178,10 @@ body {
     transform-style: preserve-3d;
     transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
     position: relative;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .key.dot-key {
@@ -299,10 +303,75 @@ body {
     margin-right: 10px;
 }
 
-@media (max-width: 640px) {
-    .braille-dot {
-        width: 1.2vw;
-        height: 1.2vw;
-        margin: 0.3vw;
+/* Responsive design */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 0;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .card-title {
+        font-size: 20px;
+    }
+
+    .braille-grid {
+        height: 30vh;
+    }
+
+    .key.dot-key {
+        width: 50px;
+        height: 70px;
+    }
+
+    .space-key {
+        width: 100px;
+        height: 40px;
+    }
+
+    .round-key {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+@media (max-width: 480px) {
+    .card-content {
+        padding: 8px;
+    }
+
+    .braille-grid {
+        height: 25vh;
+    }
+
+    .key.dot-key {
+        width: 40px;
+        height: 60px;
+    }
+
+    .space-key {
+        width: 80px;
+        height: 35px;
+    }
+
+    .round-key {
+        width: 35px;
+        height: 35px;
+    }
+
+    .key {
+        font-size: 12px;
+    }
+}
+
+/* Adjustments for touch devices */
+@media (hover: none) and (pointer: coarse) {
+    .key:hover {
+        transform: none;
+    }
+
+    .key:hover::before {
+        box-shadow: 0 0 0 2px #ffd700, 0 0.5em 0 0 #1a1a1a;
+        transform: translate3d(0, 0.5em, -1em);
     }
 }
