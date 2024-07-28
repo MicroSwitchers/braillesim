@@ -354,12 +354,17 @@ instructionsToggle.addEventListener('click', () => {
 // Fullscreen button functionality
 fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen();
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+        });
     } else {
         if (document.exitFullscreen) {
-            document.exitFullscreen();
+            document.exitFullscreen().catch(err => {
+                alert(`Error attempting to disable full-screen mode: ${err.message} (${err.name})`);
+            });
         }
     }
+    fullscreenBtn.classList.toggle('active', document.fullscreenElement);
 });
 
 // Initialize the app

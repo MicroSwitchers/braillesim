@@ -51,10 +51,45 @@ body {
     padding: 5px 10px;
     border-radius: 4px;
     cursor: pointer;
+    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), background 150ms cubic-bezier(0, 0, 0.58, 1);
+    transform-style: preserve-3d;
+    position: relative;
+}
+
+.small-button::before {
+    position: absolute;
+    content: '';
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #ffa500;
+    border-radius: inherit;
+    box-shadow: 0 0 0 2px #ffd700, 0 0.5em 0 0 #1a1a1a;
+    transform: translate3d(0, 0.5em, -1em);
+    transition: transform 150ms cubic-bezier(0, 0, 0.58, 1), box-shadow 150ms cubic-bezier(0, 0, 0.58, 1);
 }
 
 .small-button:hover {
-    background-color: #ffa500;
+    background-color: #ffd700;
+    transform: translate(0, 0.25em);
+}
+
+.small-button:hover::before {
+    box-shadow: 0 0 0 2px #ffd700, 0 0.3em 0 0 #1a1a1a;
+    transform: translate3d(0, 0.3em, -1em);
+}
+
+.small-button:active, .small-button.active {
+    background-color: #ffd700;
+    transform: translate(0em, 0.5em);
+}
+
+.small-button:active::before, .small-button.active::before {
+    box-shadow: 0 0 0 2px #ffd700, 0 0 #1a1a1a;
+    transform: translate3d(0, 0, -1em);
 }
 
 .card-content {
