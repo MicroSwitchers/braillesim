@@ -1,5 +1,5 @@
 const ROWS = 20;
-const COLS = 23;
+const COLS = 25;  // Updated to 25 columns
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
 const keyMap = {
     'f': 0, 'd': 1, 's': 2, 'j': 3, 'k': 4, 'l': 5,
