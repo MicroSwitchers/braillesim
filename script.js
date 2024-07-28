@@ -20,11 +20,14 @@ let isMouseDown = false;
 let movementInterval = null;
 let sliderTimeout = null;
 let activeTouches = new Set();
+let bellWarningSpaces = 6;
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
 const slider = document.getElementById('slider');
 const cellCount = document.getElementById('cell-count');
+const bellWarningSelect = document.getElementById('bell-warning');
+const dingSound = new Audio('ding.wav');
 
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
@@ -82,6 +85,7 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
     if (rotate) {
         rotateSlider();
     }
+    checkBellWarning();
 }
 
 function handleDotInteraction(rowIndex, colIndex, dotIndex) {
@@ -303,6 +307,7 @@ slider.addEventListener('input', (e) => {
     updateCellCount();
     renderBrailleGrid();
     rotateSlider();
+    checkBellWarning();
 });
 
 // Event listeners for dot buttons
@@ -366,6 +371,17 @@ fullscreenBtn.addEventListener('click', () => {
     }
     fullscreenBtn.classList.toggle('active', document.fullscreenElement);
 });
+
+// Bell warning functionality
+bellWarningSelect.addEventListener('change', (e) => {
+    bellWarningSpaces = parseInt(e.target.value);
+});
+
+function checkBellWarning() {
+    if (cursor.col >= COLS - bellWarningSpaces) {
+        dingSound.play();
+    }
+}
 
 // Initialize the app
 slider.value = cursor.col;
