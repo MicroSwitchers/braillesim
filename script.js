@@ -46,6 +46,7 @@ const dot4Btn = document.getElementById('dot4-btn');
 const dot5Btn = document.getElementById('dot5-btn');
 const dot6Btn = document.getElementById('dot6-btn');
 const backspaceBtn = document.getElementById('backspace-btn');
+const allClearBtn = document.getElementById('all-clear-btn');
 const eraseModeBtn = document.getElementById('erase-mode-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 
@@ -97,7 +98,7 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
 
 function handleDotInteraction(rowIndex, colIndex) {
     if (isEraseMode) {
-        grid[rowIndex][colIndex] = [...EMPTY_CELL];
+        clearCell(rowIndex, colIndex);
         renderBrailleGrid();
     }
 }
@@ -117,6 +118,19 @@ function handleMouseEnter(rowIndex, colIndex) {
 
 function handleMouseUp() {
     isMouseDown = false;
+}
+
+function clearCell(rowIndex, colIndex) {
+    const radius = 0; // Define the smaller brush radius
+    for (let i = -radius; i <= radius; i++) {
+        for (let j = -radius; j <= radius; j++) {
+            const newRow = rowIndex + i;
+            const newCol = colIndex + j;
+            if (newRow >= 0 && newRow < ROWS && newCol >= 0 && newCol < COLS) {
+                grid[newRow][newCol] = [...EMPTY_CELL];
+            }
+        }
+    }
 }
 
 function startContinuousMovement(action) {
@@ -311,6 +325,11 @@ document.addEventListener('mouseup', handleMouseUp);
 eraseModeBtn.addEventListener('click', () => {
     isEraseMode = !isEraseMode;
     eraseModeBtn.classList.toggle('active', isEraseMode);
+});
+
+allClearBtn.addEventListener('click', () => {
+    grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+    renderBrailleGrid();
 });
 
 slider.addEventListener('input', (e) => {
