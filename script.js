@@ -95,23 +95,23 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
     checkBellWarning();
 }
 
-function handleDotInteraction(rowIndex, colIndex, dotIndex) {
-    if (isEraseMode && isMouseDown) {
-        grid[rowIndex][colIndex][dotIndex] = 0;
+function handleDotInteraction(rowIndex, colIndex) {
+    if (isEraseMode) {
+        grid[rowIndex][colIndex] = [...EMPTY_CELL];
         renderBrailleGrid();
     }
 }
 
-function handleMouseDown(rowIndex, colIndex, dotIndex) {
+function handleMouseDown(rowIndex, colIndex) {
     isMouseDown = true;
     if (isEraseMode) {
-        handleDotInteraction(rowIndex, colIndex, dotIndex);
+        handleDotInteraction(rowIndex, colIndex);
     }
 }
 
-function handleMouseEnter(rowIndex, colIndex, dotIndex) {
+function handleMouseEnter(rowIndex, colIndex) {
     if (isEraseMode && isMouseDown) {
-        handleDotInteraction(rowIndex, colIndex, dotIndex);
+        handleDotInteraction(rowIndex, colIndex);
     }
 }
 
@@ -225,8 +225,8 @@ function renderBrailleCell(cell, rowIndex, colIndex) {
     [0, 3, 1, 4, 2, 5].forEach(i => {
         const dot = document.createElement('div');
         dot.className = `braille-dot ${cell[i] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-        dot.addEventListener('mousedown', () => handleMouseDown(rowIndex, colIndex, i));
-        dot.addEventListener('mouseenter', () => handleMouseEnter(rowIndex, colIndex, i));
+        dot.addEventListener('mousedown', () => handleMouseDown(rowIndex, colIndex));
+        dot.addEventListener('mouseenter', () => handleMouseEnter(rowIndex, colIndex));
         dotContainer.appendChild(dot);
     });
 
