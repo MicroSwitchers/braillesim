@@ -110,6 +110,12 @@ body {
     align-items: center;
 }
 
+@media (max-width: 640px) {
+    .braille-grid {
+        height: calc(3 * 1.5em); /* Adjust to make it 3 lines tall on small screens */
+    }
+}
+
 .braille-row {
     white-space: nowrap;
     margin-bottom: 8px;
@@ -354,12 +360,4 @@ body {
     color: #767676;
     font-size: 1.2em;
     margin-right: 10px;
-}
-
-@media (max-width: 640px) {
-    .braille-dot {
-        width: 1.2vw;
-        height: 1.2vw;
-        margin: 0.3vw;
-    }
 }
