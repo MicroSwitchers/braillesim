@@ -244,8 +244,8 @@ body {
 }
 
 .key.dot-key {
-    width: 60px;
-    height: 80px;
+    width: 67px;
+    height: 91px;
     border-top-left-radius: 30px;
     border-top-right-radius: 30px;
     border-bottom-left-radius: 50px;
@@ -293,14 +293,14 @@ body {
 }
 
 .space-key {
-    width: 120px;
-    height: 50px;
+    width: 110px;
+    height: 70px;
     border-radius: 30px;
 }
 
 .round-key {
-    width: 50px;
-    height: 50px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     display: flex;
     flex-direction: column;
@@ -381,16 +381,16 @@ body {
         padding: 0.25em;
     }
     .space-key {
-        width: 100px;
-        height: 40px;
+        width: 90px;
+        height: 50px;
     }
     .round-key {
         width: 40px;
         height: 40px;
     }
     .dot-key {
-        width: 50px;
-        height: 70px;
+        width: 70px;
+        height: 80px;
     }
     .small-button {
         font-size: 10px;
