@@ -15,19 +15,26 @@ let grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () =>
 let cursor = { row: 0, col: 0 };
 let activeKeys = new Set();
 let isEraseMode = false;
+let isFullscreen = false;
 let isDragging = false;
 let isMouseDown = false;
 let movementInterval = null;
 let sliderTimeout = null;
 let activeTouches = new Set();
-let bellWarningSpaces = 6;
+let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
+let previousBellWarningPosition = -1;
+let isBellEnabled = true;
+let isKeySoundEnabled = true;
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
 const slider = document.getElementById('slider');
 const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
-const dingSound = new Audio('ding.wav');
+const toggleBell = document.getElementById('toggle-bell');
+const toggleKeySound = document.getElementById('toggle-key-sound');
+const dingSound = document.getElementById('ding-sound');
+const keySound = document.getElementById('key-sound');
 
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
@@ -166,6 +173,7 @@ function handleKeyUp(e) {
         if (activeKeys.size === 0) {
             if (dotKeys.has(key) || spaceKeys.has(key)) {
                 moveCursor(0, 1);
+                playKeySound();
             } else if (!movementKeys.has(key)) { // Prevent cursor movement on arrow key release
                 handleAction(action);
             }
@@ -182,6 +190,7 @@ function handleKeyUp(e) {
 function handleAction(action) {
     if (action === 'linespace') {
         moveCursor(1, 0);
+        playKeySound();
     } else if (action === 'up') {
         moveCursor(-1, 0);
     } else if (action === 'down') {
@@ -189,9 +198,11 @@ function handleAction(action) {
     } else if (action === 'backspace') {
         if (cursor.col > 0) {
             moveCursor(0, -1);
+            playKeySound();
         }
     } else if (action === 'space') {
         moveCursor(0, 1);
+        playKeySound();
     }
 }
 
@@ -353,33 +364,58 @@ const instructionsToggle = document.getElementById('instructions-toggle');
 
 instructionsToggle.addEventListener('click', () => {
     instructionsDrawer.classList.toggle('open');
-    instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions' : 'Instructions';
+    instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions & Settings' : 'Instructions & Settings';
 });
 
 // Fullscreen button functionality
 fullscreenBtn.addEventListener('click', () => {
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(err => {
+        document.documentElement.requestFullscreen().then(() => {
+            isFullscreen = true;
+            fullscreenBtn.classList.add('active');
+        }).catch(err => {
             alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
         });
     } else {
         if (document.exitFullscreen) {
-            document.exitFullscreen().catch(err => {
+            document.exitFullscreen().then(() => {
+                isFullscreen = false;
+                fullscreenBtn.classList.remove('active');
+            }).catch(err => {
                 alert(`Error attempting to disable full-screen mode: ${err.message} (${err.name})`);
             });
         }
     }
-    fullscreenBtn.classList.toggle('active', document.fullscreenElement);
 });
 
 // Bell warning functionality
 bellWarningSelect.addEventListener('change', (e) => {
     bellWarningSpaces = parseInt(e.target.value);
+    previousBellWarningPosition = -1; // Reset previous warning position
+});
+
+// Toggle Bell functionality
+toggleBell.addEventListener('change', (e) => {
+    isBellEnabled = e.target.checked;
+});
+
+// Toggle Key Sound functionality
+toggleKeySound.addEventListener('change', (e) => {
+    isKeySoundEnabled = e.target.checked;
 });
 
 function checkBellWarning() {
-    if (cursor.col >= COLS - bellWarningSpaces) {
+    const warningPosition = COLS - bellWarningSpaces;
+    if (isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
         dingSound.play();
+        previousBellWarningPosition = cursor.col; // Update previous warning position
+    }
+}
+
+// Play key sound
+function playKeySound() {
+    if (isKeySoundEnabled) {
+        keySound.play();
     }
 }
 

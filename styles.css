@@ -312,6 +312,10 @@ body {
     margin-top: 16px;
 }
 
+.toggle-settings {
+    margin-top: 16px;
+}
+
 .instructions-drawer {
     position: fixed;
     bottom: 0;

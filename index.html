@@ -32,19 +32,10 @@
                 <button class="key dot-key" id="dot6-btn">6 (l)</button>
                 <button class="key round-key" id="backspace-btn">BS (;)</button>
             </div>
-            <div class="bell-settings">
-                <label for="bell-warning">Warning Bell (spaces from end):</label>
-                <select id="bell-warning">
-                    <option value="6">6</option>
-                    <option value="5">5</option>
-                    <option value="4">4</option>
-                    <option value="3">3</option>
-                </select>
-            </div>
         </div>
     </div>
     <div id="instructions-drawer" class="instructions-drawer">
-        <button id="instructions-toggle" class="instructions-toggle">Instructions</button>
+        <button id="instructions-toggle" class="instructions-toggle">Instructions & Settings</button>
         <div class="instructions-content">
             <ul>
                 <li>Key/Dot: F (1), D (2), S (3), J (4), K (5), L (6)</li>
@@ -55,8 +46,30 @@
                 <li>Braille Eraser - Erase Mode + click to flatten dots</li>
                 <li>Paper feeder Knob - ↑ ↓ Arrows</li>
             </ul>
+            <div class="settings">
+                <div class="bell-settings">
+                    <label for="bell-warning">Warning Bell (spaces from end):</label>
+                    <select id="bell-warning">
+                        <option value="7" selected>7</option>
+                        <option value="6">6</option>
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                    </select>
+                </div>
+                <div class="toggle-settings">
+                    <label for="toggle-bell">Right Margin Bell:</label>
+                    <input type="checkbox" id="toggle-bell" checked>
+                </div>
+                <div class="toggle-settings">
+                    <label for="toggle-key-sound">Key Embossing Sound:</label>
+                    <input type="checkbox" id="toggle-key-sound" checked>
+                </div>
+            </div>
         </div>
     </div>
+    <audio id="ding-sound" src="ding.wav" preload="auto"></audio>
+    <audio id="key-sound" src="key.wav" preload="auto"></audio>
     <script src="script.js"></script>
 </body>
 </html>
