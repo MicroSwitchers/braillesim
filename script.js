@@ -25,6 +25,10 @@ let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
 let isKeySoundEnabled = true;
+let isLinespaceSoundEnabled = true;
+let isUpdownSoundEnabled = true;
+let isSpaceSoundEnabled = true;
+let isAllSoundsEnabled = true;
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -33,8 +37,15 @@ const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
 const toggleBell = document.getElementById('toggle-bell');
 const toggleKeySound = document.getElementById('toggle-key-sound');
+const toggleLinespaceSound = document.getElementById('toggle-linespace-sound');
+const toggleUpdownSound = document.getElementById('toggle-updown-sound');
+const toggleSpaceSound = document.getElementById('toggle-space-sound');
+const toggleAllSounds = document.getElementById('toggle-all-sounds');
 const dingSound = document.getElementById('ding-sound');
 const keySound = document.getElementById('key-sound');
+const linespaceSound = document.getElementById('linespace-sound');
+const updownSound = document.getElementById('updown-sound');
+const spaceSound = document.getElementById('space-sound');
 
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
@@ -94,6 +105,13 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
         rotateSlider();
     }
     checkBellWarning();
+    playMovementSound(rowDelta, colDelta);
+}
+
+function playMovementSound(rowDelta, colDelta) {
+    if (isAllSoundsEnabled && isUpdownSoundEnabled && (rowDelta !== 0 || colDelta !== 0)) {
+        updownSound.play();
+    }
 }
 
 function handleDotInteraction(rowIndex, colIndex) {
@@ -161,10 +179,13 @@ function handleKeyDown(e) {
             } else if (key === 'arrowright') {
                 moveCursor(0, 1, true);
                 startContinuousMovement('right');
+                playMovementSound(0, 1);
             } else if (key === 'arrowup') {
                 moveCursor(-1, 0); // Move up without rotating
+                playMovementSound(-1, 0);
             } else if (key === 'arrowdown') {
                 moveCursor(1, 0); // Move down without rotating
+                playMovementSound(1, 0);
             }
         }
         
@@ -188,6 +209,9 @@ function handleKeyUp(e) {
             if (dotKeys.has(key) || spaceKeys.has(key)) {
                 moveCursor(0, 1);
                 playKeySound();
+                if (spaceKeys.has(key)) {
+                    playSpaceSound();
+                }
             } else if (!movementKeys.has(key)) { // Prevent cursor movement on arrow key release
                 handleAction(action);
             }
@@ -204,7 +228,7 @@ function handleKeyUp(e) {
 function handleAction(action) {
     if (action === 'linespace') {
         moveCursor(1, 0);
-        playKeySound();
+        playLinespaceSound();
     } else if (action === 'up') {
         moveCursor(-1, 0);
     } else if (action === 'down') {
@@ -216,7 +240,7 @@ function handleAction(action) {
         }
     } else if (action === 'space') {
         moveCursor(0, 1);
-        playKeySound();
+        playSpaceSound();
     }
 }
 
@@ -276,6 +300,7 @@ function handleDotButtonRelease() {
             const keyupEvent = new KeyboardEvent('keyup', { key: key });
             document.dispatchEvent(keyupEvent);
         });
+        playKeySound();
     }
 }
 
@@ -423,9 +448,29 @@ toggleKeySound.addEventListener('change', (e) => {
     isKeySoundEnabled = e.target.checked;
 });
 
+// Toggle Line Space Sound functionality
+toggleLinespaceSound.addEventListener('change', (e) => {
+    isLinespaceSoundEnabled = e.target.checked;
+});
+
+// Toggle Up/Down Sound functionality
+toggleUpdownSound.addEventListener('change', (e) => {
+    isUpdownSoundEnabled = e.target.checked;
+});
+
+// Toggle Space Sound functionality
+toggleSpaceSound.addEventListener('change', (e) => {
+    isSpaceSoundEnabled = e.target.checked;
+});
+
+// Master Sound Toggle functionality
+toggleAllSounds.addEventListener('change', (e) => {
+    isAllSoundsEnabled = e.target.checked;
+});
+
 function checkBellWarning() {
     const warningPosition = COLS - bellWarningSpaces;
-    if (isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
+    if (isAllSoundsEnabled && isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
         dingSound.play();
         previousBellWarningPosition = cursor.col; // Update previous warning position
     }
@@ -433,8 +478,22 @@ function checkBellWarning() {
 
 // Play key sound
 function playKeySound() {
-    if (isKeySoundEnabled) {
+    if (isAllSoundsEnabled && isKeySoundEnabled) {
         keySound.play();
+    }
+}
+
+// Play line space sound
+function playLinespaceSound() {
+    if (isAllSoundsEnabled && isLinespaceSoundEnabled) {
+        linespaceSound.play();
+    }
+}
+
+// Play space sound
+function playSpaceSound() {
+    if (isAllSoundsEnabled && isSpaceSoundEnabled) {
+        spaceSound.play();
     }
 }
 
