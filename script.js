@@ -28,7 +28,6 @@ let isKeySoundEnabled = true;
 let isLinespaceSoundEnabled = true;
 let isUpdownSoundEnabled = true;
 let isSpaceSoundEnabled = true;
-let isAllSoundsEnabled = true;
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -40,7 +39,6 @@ const toggleKeySound = document.getElementById('toggle-key-sound');
 const toggleLinespaceSound = document.getElementById('toggle-linespace-sound');
 const toggleUpdownSound = document.getElementById('toggle-updown-sound');
 const toggleSpaceSound = document.getElementById('toggle-space-sound');
-const toggleAllSounds = document.getElementById('toggle-all-sounds');
 const dingSound = document.getElementById('ding-sound');
 const keySound = document.getElementById('key-sound');
 const linespaceSound = document.getElementById('linespace-sound');
@@ -109,7 +107,7 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
 }
 
 function playMovementSound(rowDelta, colDelta) {
-    if (isAllSoundsEnabled && isUpdownSoundEnabled && (rowDelta !== 0 || colDelta !== 0)) {
+    if (isUpdownSoundEnabled && (rowDelta !== 0 || colDelta !== 0)) {
         updownSound.play();
     }
 }
@@ -164,6 +162,9 @@ function startContinuousMovement(action) {
 
 function handleKeyDown(e) {
     const key = e.key.toLowerCase();
+    if (key === ' ') {
+        return;  // Ignore the space key
+    }
     const action = keyMap[key];
 
     if (action !== undefined && !activeKeys.has(key)) {
@@ -463,14 +464,9 @@ toggleSpaceSound.addEventListener('change', (e) => {
     isSpaceSoundEnabled = e.target.checked;
 });
 
-// Master Sound Toggle functionality
-toggleAllSounds.addEventListener('change', (e) => {
-    isAllSoundsEnabled = e.target.checked;
-});
-
 function checkBellWarning() {
     const warningPosition = COLS - bellWarningSpaces;
-    if (isAllSoundsEnabled && isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
+    if (isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
         dingSound.play();
         previousBellWarningPosition = cursor.col; // Update previous warning position
     }
@@ -478,21 +474,21 @@ function checkBellWarning() {
 
 // Play key sound
 function playKeySound() {
-    if (isAllSoundsEnabled && isKeySoundEnabled) {
+    if (isKeySoundEnabled) {
         keySound.play();
     }
 }
 
 // Play line space sound
 function playLinespaceSound() {
-    if (isAllSoundsEnabled && isLinespaceSoundEnabled) {
+    if (isLinespaceSoundEnabled) {
         linespaceSound.play();
     }
 }
 
 // Play space sound
 function playSpaceSound() {
-    if (isAllSoundsEnabled && isSpaceSoundEnabled) {
+    if (isSpaceSoundEnabled) {
         spaceSound.play();
     }
 }
