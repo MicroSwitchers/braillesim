@@ -33,8 +33,8 @@ const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
 const toggleBell = document.getElementById('toggle-bell');
 const toggleKeySound = document.getElementById('toggle-key-sound');
-const dingSound = document.getElementById('ding-sound');
-const keySound = document.getElementById('key-sound');
+const dingSound = new Audio('ding.wav');
+const keySound = new Audio('key.wav');
 const volumeControl = document.getElementById('volume-control');
 
 // Set initial volume to a much lower value (5% of max volume)
