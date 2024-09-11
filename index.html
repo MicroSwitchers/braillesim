@@ -48,50 +48,33 @@
                 <li>Paper feeder Knob - ↑ ↓ Arrows</li>
             </ul>
             <div class="settings">
-                <div class="braille-settings">
-                    <h3>Braille Settings</h3>
-                    <div class="bell-settings">
-                        <label for="bell-warning">Warning Bell (spaces from end):</label>
-                        <select id="bell-warning">
-                            <option value="7" selected>7</option>
-                            <option value="6">6</option>
-                            <option value="5">5</option>
-                            <option value="4">4</option>
-                            <option value="3">3</option>
-                        </select>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-bell">Right Margin Bell:</label>
-                        <input type="checkbox" id="toggle-bell" checked>
-                    </div>
+                <div class="bell-settings">
+                    <label for="bell-warning">Warning Bell (spaces from end):</label>
+                    <select id="bell-warning">
+                        <option value="7" selected>7</option>
+                        <option value="6">6</option>
+                        <option value="5">5</option>
+                        <option value="4">4</option>
+                        <option value="3">3</option>
+                    </select>
                 </div>
-                <div class="sound-settings">
-                    <h3>Sounds</h3>
-                    <div class="toggle-settings">
-                        <label for="toggle-key-sound">Key Embossing Sound:</label>
-                        <input type="checkbox" id="toggle-key-sound" checked>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-linespace-sound">Line Space Sound:</label>
-                        <input type="checkbox" id="toggle-linespace-sound" checked>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-updown-sound">Up/Down Sound:</label>
-                        <input type="checkbox" id="toggle-updown-sound" checked>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-space-sound">Space Sound:</label>
-                        <input type="checkbox" id="toggle-space-sound" checked>
-                    </div>
+                <div class="toggle-settings">
+                    <label for="toggle-bell">Right Margin Bell:</label>
+                    <input type="checkbox" id="toggle-bell" checked>
                 </div>
+                <div class="toggle-settings">
+                    <label for="toggle-key-sound">Key Embossing Sound:</label>
+                    <input type="checkbox" id="toggle-key-sound" checked>
+                </div>
+            </div>
+            <div class="volume-settings">
+                <label for="volume-control">Sound Volume:</label>
+                <input type="range" id="volume-control" min="0" max="100" value="5">
             </div>
         </div>
     </div>
     <audio id="ding-sound" src="ding.wav" preload="auto"></audio>
     <audio id="key-sound" src="key.wav" preload="auto"></audio>
-    <audio id="linespace-sound" src="linespace.wav" preload="auto"></audio>
-    <audio id="updown-sound" src="updown.wav" preload="auto"></audio>
-    <audio id="space-sound" src="space.wav" preload="auto"></audio>
     <script src="script.js"></script>
 </body>
 </html>

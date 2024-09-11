@@ -25,9 +25,6 @@ let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
 let isKeySoundEnabled = true;
-let isLinespaceSoundEnabled = true;
-let isUpdownSoundEnabled = true;
-let isSpaceSoundEnabled = true;
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -36,14 +33,27 @@ const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
 const toggleBell = document.getElementById('toggle-bell');
 const toggleKeySound = document.getElementById('toggle-key-sound');
-const toggleLinespaceSound = document.getElementById('toggle-linespace-sound');
-const toggleUpdownSound = document.getElementById('toggle-updown-sound');
-const toggleSpaceSound = document.getElementById('toggle-space-sound');
 const dingSound = document.getElementById('ding-sound');
 const keySound = document.getElementById('key-sound');
-const linespaceSound = document.getElementById('linespace-sound');
-const updownSound = document.getElementById('updown-sound');
-const spaceSound = document.getElementById('space-sound');
+const volumeControl = document.getElementById('volume-control');
+
+// Set initial volume to a much lower value (5% of max volume)
+dingSound.volume = 0.05;
+keySound.volume = 0.05;
+
+// Update the initial value of the volume control slider
+volumeControl.value = 5;
+
+function updateVolume() {
+    const volume = volumeControl.value / 100;
+    dingSound.volume = volume;
+    keySound.volume = volume;
+}
+
+volumeControl.addEventListener('input', updateVolume);
+
+// Call this function once to set initial volume
+updateVolume();
 
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
@@ -103,13 +113,6 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
         rotateSlider();
     }
     checkBellWarning();
-    playMovementSound(rowDelta, colDelta);
-}
-
-function playMovementSound(rowDelta, colDelta) {
-    if (isUpdownSoundEnabled && (rowDelta !== 0 || colDelta !== 0)) {
-        updownSound.play();
-    }
 }
 
 function handleDotInteraction(rowIndex, colIndex) {
@@ -162,9 +165,6 @@ function startContinuousMovement(action) {
 
 function handleKeyDown(e) {
     const key = e.key.toLowerCase();
-    if (key === ' ') {
-        return;  // Ignore the space key
-    }
     const action = keyMap[key];
 
     if (action !== undefined && !activeKeys.has(key)) {
@@ -180,13 +180,10 @@ function handleKeyDown(e) {
             } else if (key === 'arrowright') {
                 moveCursor(0, 1, true);
                 startContinuousMovement('right');
-                playMovementSound(0, 1);
             } else if (key === 'arrowup') {
                 moveCursor(-1, 0); // Move up without rotating
-                playMovementSound(-1, 0);
             } else if (key === 'arrowdown') {
                 moveCursor(1, 0); // Move down without rotating
-                playMovementSound(1, 0);
             }
         }
         
@@ -210,9 +207,6 @@ function handleKeyUp(e) {
             if (dotKeys.has(key) || spaceKeys.has(key)) {
                 moveCursor(0, 1);
                 playKeySound();
-                if (spaceKeys.has(key)) {
-                    playSpaceSound();
-                }
             } else if (!movementKeys.has(key)) { // Prevent cursor movement on arrow key release
                 handleAction(action);
             }
@@ -229,7 +223,7 @@ function handleKeyUp(e) {
 function handleAction(action) {
     if (action === 'linespace') {
         moveCursor(1, 0);
-        playLinespaceSound();
+        playKeySound();
     } else if (action === 'up') {
         moveCursor(-1, 0);
     } else if (action === 'down') {
@@ -241,7 +235,7 @@ function handleAction(action) {
         }
     } else if (action === 'space') {
         moveCursor(0, 1);
-        playSpaceSound();
+        playKeySound();
     }
 }
 
@@ -301,7 +295,6 @@ function handleDotButtonRelease() {
             const keyupEvent = new KeyboardEvent('keyup', { key: key });
             document.dispatchEvent(keyupEvent);
         });
-        playKeySound();
     }
 }
 
@@ -449,21 +442,6 @@ toggleKeySound.addEventListener('change', (e) => {
     isKeySoundEnabled = e.target.checked;
 });
 
-// Toggle Line Space Sound functionality
-toggleLinespaceSound.addEventListener('change', (e) => {
-    isLinespaceSoundEnabled = e.target.checked;
-});
-
-// Toggle Up/Down Sound functionality
-toggleUpdownSound.addEventListener('change', (e) => {
-    isUpdownSoundEnabled = e.target.checked;
-});
-
-// Toggle Space Sound functionality
-toggleSpaceSound.addEventListener('change', (e) => {
-    isSpaceSoundEnabled = e.target.checked;
-});
-
 function checkBellWarning() {
     const warningPosition = COLS - bellWarningSpaces;
     if (isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
@@ -476,20 +454,6 @@ function checkBellWarning() {
 function playKeySound() {
     if (isKeySoundEnabled) {
         keySound.play();
-    }
-}
-
-// Play line space sound
-function playLinespaceSound() {
-    if (isLinespaceSoundEnabled) {
-        linespaceSound.play();
-    }
-}
-
-// Play space sound
-function playSpaceSound() {
-    if (isSpaceSoundEnabled) {
-        spaceSound.play();
     }
 }
 
