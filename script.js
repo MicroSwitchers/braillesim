@@ -1,6 +1,7 @@
-const ROWS = 20;
-const COLS = 31;  // Increased from 27 to 31
+let ROWS = 20; 
+let COLS = 31;  // Will be dynamically calculated
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
+let MIN_COLS = 15; // Minimum number of columns to ensure usability
 const keyMap = {
     'f': 0, 'd': 1, 's': 2, 'j': 3, 'k': 4, 'l': 5,
     'g': 'space', 'h': 'space',
@@ -11,7 +12,6 @@ const dotKeys = new Set(['f', 'd', 's', 'j', 'k', 'l']);
 const spaceKeys = new Set(['g', 'h']);
 const movementKeys = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
-let grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
 let cursor = { row: 0, col: 0 };
 let activeKeys = new Set();
 let isEraseMode = false;
@@ -109,7 +109,7 @@ function updateGrid(newCell, row, col) {
 
 // Remove bell warning check from updateCellCount function
 function updateCellCount() {
-    cellCount.textContent = `Cell: ${cursor.col + 1} / 31`;
+    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
     // Remove the bell warning check from here - it's now handled in checkBellWarning()
 }
 
@@ -620,24 +620,44 @@ instructionsToggle.addEventListener('click', () => {
     instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions & Settings' : 'Instructions & Settings';
 });
 
-// Fullscreen button functionality
+// Replace the existing fullscreen button click handler with this improved version
+
 fullscreenBtn.addEventListener('click', () => {
+    const appContainer = document.getElementById('braille-writer-app');
+    
     if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
+        // Request fullscreen on the app container, not the entire document
+        appContainer.requestFullscreen().then(() => {
             isFullscreen = true;
             fullscreenBtn.classList.add('active');
+            fullscreenBtn.textContent = "Exit Full";
         }).catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
         });
     } else {
         if (document.exitFullscreen) {
             document.exitFullscreen().then(() => {
                 isFullscreen = false;
                 fullscreenBtn.classList.remove('active');
+                fullscreenBtn.textContent = "Full Screen";
             }).catch(err => {
-                alert(`Error attempting to disable full-screen mode: ${err.message} (${err.name})`);
+                console.error(`Error attempting to disable full-screen mode: ${err.message}`);
             });
         }
+    }
+});
+
+// Add an event listener for fullscreen changes
+document.addEventListener('fullscreenchange', () => {
+    const isInFullscreen = Boolean(document.fullscreenElement);
+    isFullscreen = isInFullscreen;
+    
+    if (isInFullscreen) {
+        fullscreenBtn.classList.add('active');
+        fullscreenBtn.textContent = "Exit Full";
+    } else {
+        fullscreenBtn.classList.remove('active');
+        fullscreenBtn.textContent = "Full Screen";
     }
 });
 
@@ -947,6 +967,11 @@ function setupFocusManagement() {
 
 // Initialize everything in one place
 function initializeBrailleWriter() {
+    // Do initial size calculation after a small delay to ensure DOM has fully loaded
+    setTimeout(() => {
+        resizeGridToFit();
+    }, 100);
+    
     slider.value = cursor.col;
     updateCellCount();
     createFullGrid(); // Use the new function instead of renderBrailleGrid
@@ -958,7 +983,7 @@ function initializeBrailleWriter() {
     window.addEventListener('resize', () => {
         if (resizeTimeout) clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
-            updateExistingGrid();
+            resizeGridToFit(); // Recalculate on resize
         }, 250);
     });
 }
@@ -968,4 +993,129 @@ if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeBrailleWriter);
 } else {
     initializeBrailleWriter();
+}
+
+// Replace the static grid initialization with a function
+function initializeGrid(rows, cols) {
+    return Array.from({ length: rows }, () => 
+        Array.from({ length: cols }, () => [...EMPTY_CELL])
+    );
+}
+
+// Create initial grid
+let grid = initializeGrid(ROWS, COLS);
+
+// Add this function to calculate optimal column count
+function calculateOptimalColumnCount() {
+    // Get the braille grid width 
+    const gridWidth = brailleGrid.clientWidth;
+    
+    // Calculate cell width including margins (20px cell width + 2px left margin + 2px right margin)
+    const cellTotalWidth = 24; 
+    
+    // Calculate how many cells can fit in the grid width
+    const possibleCols = Math.floor(gridWidth / cellTotalWidth);
+    
+    // Ensure we have at least the minimum number of columns
+    return Math.max(possibleCols, MIN_COLS);
+}
+
+// Create a function to resize the grid when needed
+function resizeGridToFit() {
+    const newColCount = calculateOptimalColumnCount();
+    
+    // Only proceed if column count has changed
+    if (newColCount !== COLS) {
+        console.log(`Resizing grid: ${COLS} → ${newColCount} columns`);
+        
+        // Create a new grid with new dimensions
+        const newGrid = initializeGrid(ROWS, newColCount);
+        
+        // Copy existing content to new grid
+        for (let i = 0; i < ROWS; i++) {
+            for (let j = 0; j < Math.min(COLS, newColCount); j++) {
+                if (i < grid.length && j < grid[i].length) {
+                    newGrid[i][j] = [...grid[i][j]];
+                }
+            }
+        }
+        
+        // Update global variables
+        COLS = newColCount;
+        grid = newGrid;
+        
+        // Update slider max value
+        slider.max = COLS - 1;
+        
+        // Ensure cursor is within bounds
+        cursor.col = Math.min(cursor.col, COLS - 1);
+        
+        // Update UI
+        updateCellCount();
+        createFullGrid(); // Recreate the entire grid with new column count
+        
+        // Update bell warning position
+        checkBellWarning();
+        
+        // Update slider after changing COLS
+        updateSlider();
+    }
+}
+
+// Replace the updateCellCount function
+function updateCellCount() {
+    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
+}
+
+// Modify the initializeBrailleWriter function to include our new resize functionality
+function initializeBrailleWriter() {
+    // Do initial size calculation after a small delay to ensure DOM has fully loaded
+    setTimeout(() => {
+        resizeGridToFit();
+    }, 100);
+    
+    slider.value = cursor.col;
+    updateCellCount();
+    createFullGrid();
+    setupFocusManagement();
+    setupTouchSupport();
+    
+    // Throttled window resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            resizeGridToFit(); // Recalculate on resize
+        }, 250);
+    });
+}
+
+// Add this function to update the slider when column count changes
+function updateSlider() {
+    // Update slider attributes
+    slider.max = COLS - 1;
+    
+    // Update cell count
+    updateCellCount();
+    
+    // If cursor position exceeds new max, adjust it
+    if (cursor.col >= COLS) {
+        cursor.col = COLS - 1;
+        slider.value = cursor.col;
+    }
+}
+
+// Call this function in resizeGridToFit() after updating COLS
+function resizeGridToFit() {
+    const newColCount = calculateOptimalColumnCount();
+    
+    // Only proceed if column count has changed
+    if (newColCount !== COLS) {
+        // ...existing code...
+        
+        // Update slider after changing COLS
+        updateSlider();
+        
+        // ...rest of existing code...
+    }
 }

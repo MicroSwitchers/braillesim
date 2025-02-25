@@ -115,18 +115,19 @@ body {
     overflow-y: auto;
 }
 
+/* Update braille-grid to center its contents */
 .braille-grid {
     border: 1px solid #ffd700;
     background-image: linear-gradient(to bottom, rgba(15, 15, 15, 0.7), rgba(8, 8, 8, 0.7));
-    padding: 8px 4px; /* Reduced horizontal padding further */
+    padding: 8px 6px; /* Balanced padding */
     margin-bottom: 16px;
     overflow-y: auto;
-    overflow-x: auto; /* Allow horizontal scrolling if needed */
+    overflow-x: hidden; /* Changed from auto to hidden since we're calculating fit */
     height: 40vh;
     min-height: 200px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start; /* Align items to start instead of center */
+    align-items: center; /* Center rows horizontally */
     width: 100%;
     box-sizing: border-box;
     box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.4);
@@ -171,28 +172,25 @@ body {
     }
 }
 
+/* Update braille-row to center its contents */
 .braille-row {
-    white-space: nowrap;
-    margin-bottom: 8px;
     display: flex;
-    justify-content: flex-start; /* Left align instead of center */
-    flex-wrap: nowrap; /* Prevent wrapping */
-    min-width: 100%;
-    max-width: fit-content; /* Allow row to be as wide as needed */
+    flex-wrap: nowrap;
+    margin-bottom: 8px;
+    justify-content: center; /* Center cells within each row */
+    width: 100%;
 }
 
 /* Maintain consistent cell sizing */
 .braille-cell {
-    display: inline-block;
-    margin-right: 2px;
-    margin-left: 2px;
-    margin-bottom: 4px;
+    width: 20px;
+    height: 28px;
+    margin: 0 2px 4px 2px;
     padding: 2px;
-    width: 20px; /* Fixed width */
-    height: 28px; /* Fixed height */
     box-sizing: border-box;
-    position: relative; /* Added for proper current-cell positioning */
-    border: 1px solid transparent; /* Consistent 1px transparent border */
+    position: relative;
+    border: 1px solid transparent;
+    flex: 0 0 auto; /* Prevent cells from growing/shrinking */
 }
 
 @media (max-width: 768px) {
@@ -806,4 +804,82 @@ input[type="checkbox"] {
 /* Prevent excessive reflow when resizing */
 .card, .card-content, .braille-grid {
     contain: layout size;
+}
+
+/* Add these rules for fullscreen mode */
+
+#braille-writer-app:fullscreen {
+    background-color: #0c0c0c;
+    background-image: linear-gradient(145deg, #151515 0%, #0a0a0a 50%, #080808 100%);
+    height: 100%;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+    overflow: auto;
+}
+
+#braille-writer-app:fullscreen .card-content {
+    flex-grow: 1;
+    height: calc(100% - 70px); /* Account for header height */
+}
+
+#braille-writer-app:fullscreen .braille-grid {
+    height: 50vh; /* More space in fullscreen mode */
+}
+
+/* WebKit fullscreen */
+#braille-writer-app:-webkit-full-screen {
+    background-color: #0c0c0c;
+    background-image: linear-gradient(145deg, #151515 0%, #0a0a0a 50%, #080808 100%);
+    height: 100%;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Firefox fullscreen */
+#braille-writer-app:-moz-full-screen {
+    background-color: #0c0c0c;
+    background-image: linear-gradient(145deg, #151515 0%, #0a0a0a 50%, #080808 100%);
+    height: 100%;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    border-radius: 0;
+}
+
+/* Make sure the fullscreen button shows active state */
+#fullscreen-btn.active {
+    background-image: linear-gradient(to bottom, #ff9500, #ff8000 50%, #cc6800);
+    color: white;
+}
+
+/* Specific fullscreen styling to maintain centering */
+#braille-writer-app:fullscreen .braille-grid {
+    height: 50vh; /* More space in fullscreen mode */
+    align-items: center;
+}
+
+#braille-writer-app:fullscreen .braille-row {
+    justify-content: center;
+}
+
+/* WebKit fullscreen */
+#braille-writer-app:-webkit-full-screen .braille-grid {
+    align-items: center;
+}
+
+#braille-writer-app:-webkit-full-screen .braille-row {
+    justify-content: center;
+}
+
+/* Firefox fullscreen */
+#braille-writer-app:-moz-full-screen .braille-grid {
+    align-items: center;
+}
+
+#braille-writer-app:-moz-full-screen .braille-row {
+    justify-content: center;
 }
