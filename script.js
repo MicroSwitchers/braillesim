@@ -710,3 +710,121 @@ window.addEventListener('beforeunload', (e) => {
         return message; // For older browsers
     }
 });
+
+// Add touch event handling for top buttons
+
+function setupTouchSupport() {
+    // Get all buttons in the header
+    const headerButtons = document.querySelectorAll('.header-buttons .small-button');
+    
+    // Add touch handlers to each button
+    headerButtons.forEach(button => {
+        button.addEventListener('touchstart', function(e) {
+            // Don't prevent default here to allow the touch to register
+            this.classList.add('active');
+        }, { passive: true });
+        
+        button.addEventListener('touchend', function(e) {
+            this.classList.remove('active');
+            
+            // Manually trigger the click event
+            this.click();
+            
+            // Refocus on app container after a slight delay
+            setTimeout(() => {
+                const appContainer = document.getElementById('braille-writer-app');
+                if (appContainer) appContainer.focus();
+            }, 100);
+        });
+    });
+    
+    // Also add touch support for key buttons
+    document.querySelectorAll('.key').forEach(key => {
+        key.addEventListener('touchstart', function(e) {
+            this.classList.add('active');
+            
+            // Get the corresponding keyboard key from the button ID
+            const buttonId = this.id;
+            const keyboardKey = keyButtonMap[buttonId];
+            
+            if (keyboardKey) {
+                // Simulate the keyboard event
+                handleKeyDown({ key: keyboardKey, preventDefault: () => {} });
+            }
+        }, { passive: true });
+        
+        key.addEventListener('touchend', function(e) {
+            this.classList.remove('active');
+            
+            // Get the corresponding keyboard key from the button ID
+            const buttonId = this.id;
+            const keyboardKey = keyButtonMap[buttonId];
+            
+            if (keyboardKey) {
+                // Simulate key up
+                handleKeyUp({ key: keyboardKey });
+            }
+            
+            // Refocus on app container
+            setTimeout(() => {
+                const appContainer = document.getElementById('braille-writer-app');
+                if (appContainer) appContainer.focus();
+            }, 100);
+        });
+    });
+}
+
+// Update the focus management function
+function setupFocusManagement() {
+    // Make the braille writer app container focusable
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    
+    // Set initial focus to the app container when page loads
+    window.addEventListener('load', () => {
+        appContainer.focus();
+    });
+    
+    // Set focus immediately (in case DOM already loaded)
+    appContainer.focus();
+    
+    // Re-focus app when clicking anywhere in the app
+    appContainer.addEventListener('mousedown', () => {
+        appContainer.focus();
+    });
+    
+    // Prevent Tab key from moving focus out of the app
+    appContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+        }
+    });
+    
+    // MODIFY THIS PART: Don't prevent default for button clicks
+    document.querySelectorAll('.key, .small-button').forEach(button => {
+        button.addEventListener('mousedown', (e) => {
+            // Allow the event to proceed naturally for buttons
+            // DON'T call e.preventDefault() here
+            
+            // Refocus after the event
+            setTimeout(() => {
+                appContainer.focus();
+            }, 10);
+        });
+    });
+    
+    // Special handling for slider to maintain functionality
+    const slider = document.getElementById('slider');
+    slider.addEventListener('mousedown', () => {
+        // Refocus app container after a slight delay to allow slider interaction
+        setTimeout(() => {
+            appContainer.focus();
+        }, 10);
+    });
+}
+
+// Call both setup functions after the DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    setupFocusManagement();
+    setupTouchSupport();
+});
