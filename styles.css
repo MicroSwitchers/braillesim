@@ -771,3 +771,39 @@ input[type="checkbox"] {
     background-image: linear-gradient(to bottom, #e62e2e 20%, #cc0000);
     box-shadow: 0 0 0 2px #ff3333, 0 0.5em 0 0 #1a1a1a;
 }
+
+/* Hardware acceleration for smoother performance */
+.braille-grid, .key, .small-button, .slider, .braille-cell, .braille-dot {
+    transform: translateZ(0);
+    will-change: transform;
+    backface-visibility: hidden;
+}
+
+/* Reduce animation complexity on mobile */
+@media (max-width: 768px) {
+    @keyframes cursorPulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+    
+    .current-cell::after {
+        animation-duration: 2s; /* Slower animation for better performance */
+        box-shadow: 0 0 4px rgba(255, 215, 0, 0.4); /* Simpler shadow */
+    }
+    
+    /* Simpler gradient backgrounds for better performance */
+    .key, .small-button {
+        background-image: none;
+        background-color: #ffd700;
+    }
+    
+    .key::before, .small-button::before {
+        background-image: none;
+        background-color: #ff9500;
+    }
+}
+
+/* Prevent excessive reflow when resizing */
+.card, .card-content, .braille-grid {
+    contain: layout size;
+}

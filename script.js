@@ -351,32 +351,154 @@ eraseModeBtn.addEventListener('click', () => {
     }
 });
 
+// Replace the renderBrailleGrid function with this optimized version
+
 function renderBrailleGrid() {
-    brailleGrid.innerHTML = '';  // Clear existing content
+    // Use requestAnimationFrame for smoother rendering
+    requestAnimationFrame(() => {
+        // Check if we need to create the grid from scratch or can update it
+        if (brailleGrid.children.length === 0) {
+            createFullGrid();
+        } else {
+            updateExistingGrid();
+        }
+        
+        // Scroll to make cursor visible with less jank
+        const currentCell = document.querySelector('.current-cell');
+        if (currentCell) {
+            // Only scroll if needed
+            const rect = currentCell.getBoundingClientRect();
+            const containerRect = brailleGrid.getBoundingClientRect();
+            
+            if (rect.left < containerRect.left || 
+                rect.right > containerRect.right ||
+                rect.top < containerRect.top || 
+                rect.bottom > containerRect.bottom) {
+                    
+                currentCell.scrollIntoView({
+                    behavior: 'auto', // Changed from 'smooth' for better performance
+                    block: 'nearest',
+                    inline: 'center'
+                });
+            }
+        }
+    });
+}
+
+// Function to create the entire grid
+function createFullGrid() {
+    const fragment = document.createDocumentFragment(); // Use document fragment for better performance
     
-    // Create visible rows based on data
     for (let i = 0; i < ROWS; i++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'braille-row';
+        rowElement.dataset.row = i;
         
         for (let j = 0; j < COLS; j++) {
-            const cellElement = renderBrailleCell(grid[i][j], i, j);
+            const cellElement = createBrailleCell(grid[i][j], i, j);
             rowElement.appendChild(cellElement);
         }
         
-        brailleGrid.appendChild(rowElement);
+        fragment.appendChild(rowElement);
     }
     
-    // Scroll to make cursor visible
-    const currentCell = document.querySelector('.current-cell');
-    if (currentCell) {
-        currentCell.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center'
-        });
+    brailleGrid.innerHTML = ''; // Clear existing content
+    brailleGrid.appendChild(fragment);
+}
+
+// Function to update only changed cells
+function updateExistingGrid() {
+    // Update current cell indicators
+    document.querySelectorAll('.current-cell').forEach(cell => {
+        cell.classList.remove('current-cell');
+    });
+    
+    // Find the current row and appropriate cell
+    const rowElement = brailleGrid.children[cursor.row];
+    if (rowElement && rowElement.children[cursor.col]) {
+        rowElement.children[cursor.col].classList.add('current-cell');
+    }
+    
+    // Update dot states for visible cells only
+    for (let i = Math.max(0, cursor.row - 5); i <= Math.min(ROWS - 1, cursor.row + 5); i++) {
+        const rowElement = brailleGrid.children[i];
+        if (!rowElement) continue;
+        
+        for (let j = Math.max(0, cursor.col - 15); j <= Math.min(COLS - 1, cursor.col + 15); j++) {
+            const cellElement = rowElement.children[j];
+            if (!cellElement) continue;
+            
+            const dotContainer = cellElement.querySelector('.braille-dot-container');
+            if (!dotContainer) continue;
+            
+            // Update each dot's state if needed
+            const dots = dotContainer.querySelectorAll('.braille-dot');
+            [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
+                const dot = dots[visualPosition];
+                const isActive = grid[i][j][dotIndex] === 1;
+                const hasActiveClass = dot.classList.contains('braille-dot-active');
+                
+                // Only update if the state changed
+                if (isActive !== hasActiveClass) {
+                    dot.classList.toggle('braille-dot-active');
+                    dot.classList.toggle('braille-dot-inactive');
+                }
+            });
+        }
     }
 }
+
+// Optimize cell creation with event delegation
+function createBrailleCell(cell, rowIndex, colIndex) {
+    const isCurrentCell = rowIndex === cursor.row && colIndex === cursor.col;
+    const cellElement = document.createElement('div');
+    cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
+    cellElement.dataset.row = rowIndex;
+    cellElement.dataset.col = colIndex;
+
+    const dotContainer = document.createElement('div');
+    dotContainer.className = 'braille-dot-container';
+
+    // The dots are ordered in visual order: 1,4,2,5,3,6 which maps to array indices 0,3,1,4,2,5
+    [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
+        const dot = document.createElement('div');
+        dot.className = `braille-dot ${cell[dotIndex] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+        
+        // Store dot data as attributes for eraser tool
+        dot.dataset.row = rowIndex;
+        dot.dataset.col = colIndex;
+        dot.dataset.dotIndex = dotIndex;
+        
+        // Remove individual event listeners and use delegation
+        dotContainer.appendChild(dot);
+    });
+
+    cellElement.appendChild(dotContainer);
+    return cellElement;
+}
+
+// Use event delegation for dot interaction
+brailleGrid.addEventListener('mousedown', (e) => {
+    const dot = e.target.closest('.braille-dot');
+    if (dot && isEraseMode) {
+        const row = parseInt(dot.dataset.row);
+        const col = parseInt(dot.dataset.col);
+        const dotIndex = parseInt(dot.dataset.dotIndex);
+        eraseDot(row, col, dotIndex);
+    }
+});
+
+brailleGrid.addEventListener('mouseover', (e) => {
+    if (isMouseDown && isEraseMode) {
+        const dot = e.target.closest('.braille-dot');
+        if (dot) {
+            const row = parseInt(dot.dataset.row);
+            const col = parseInt(dot.dataset.col);
+            const dotIndex = parseInt(dot.dataset.dotIndex);
+            eraseDot(row, col, dotIndex);
+        }
+    }
+});
 
 // Function to handle dot button clicks
 function handleDotButtonClick(dotIndex) {
@@ -823,8 +945,27 @@ function setupFocusManagement() {
     });
 }
 
-// Call both setup functions after the DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize everything in one place
+function initializeBrailleWriter() {
+    slider.value = cursor.col;
+    updateCellCount();
+    createFullGrid(); // Use the new function instead of renderBrailleGrid
     setupFocusManagement();
     setupTouchSupport();
-});
+    
+    // Throttled window resize handler
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        if (resizeTimeout) clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            updateExistingGrid();
+        }, 250);
+    });
+}
+
+// Call this once when document is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeBrailleWriter);
+} else {
+    initializeBrailleWriter();
+}
