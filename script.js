@@ -1,5 +1,5 @@
 const ROWS = 20;
-const COLS = 25;  // Updated to 25 columns
+const COLS = 31;  // Increased from 27 to 31
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
 const keyMap = {
     'f': 0, 'd': 1, 's': 2, 'j': 3, 'k': 4, 'l': 5,
@@ -55,6 +55,14 @@ volumeControl.addEventListener('input', updateVolume);
 // Call this function once to set initial volume
 updateVolume();
 
+// Add this to prevent potential audio issues
+function playSoundSafely(audioElement) {
+    // Clone and play to allow overlapping sounds
+    const soundClone = audioElement.cloneNode();
+    soundClone.volume = audioElement.volume;
+    soundClone.play().catch(err => console.log("Audio play prevented:", err));
+}
+
 // Button elements
 const linespaceBtn = document.getElementById('linespace-btn');
 const dot3Btn = document.getElementById('dot3-btn');
@@ -99,8 +107,27 @@ function updateGrid(newCell, row, col) {
     renderBrailleGrid();
 }
 
+// Remove bell warning check from updateCellCount function
 function updateCellCount() {
-    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
+    cellCount.textContent = `Cell: ${cursor.col + 1} / 31`;
+    // Remove the bell warning check from here - it's now handled in checkBellWarning()
+}
+
+// Fix the checkBellWarning function to be the single source of bell warnings
+function checkBellWarning() {
+    // Standardize the warning position calculation
+    const warningPosition = COLS - bellWarningSpaces - 1;
+    
+    if (isBellEnabled && cursor.col === warningPosition && previousBellWarningPosition !== cursor.col) {
+        // Only play bell when reaching warning position and we haven't played it already
+        playSoundSafely(dingSound);
+        previousBellWarningPosition = cursor.col;
+    }
+    
+    // Reset previous warning position when moving away from warning position
+    if (cursor.col !== warningPosition) {
+        previousBellWarningPosition = -1;
+    }
 }
 
 function moveCursor(rowDelta, colDelta, rotate = false) {
@@ -112,20 +139,13 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
     if (rotate) {
         rotateSlider();
     }
-    checkBellWarning();
+    checkBellWarning(); // Call this after updating the cursor position
 }
 
 function handleDotInteraction(rowIndex, colIndex) {
     if (isEraseMode) {
         clearCell(rowIndex, colIndex);
         renderBrailleGrid();
-    }
-}
-
-function handleMouseDown(rowIndex, colIndex) {
-    isMouseDown = true;
-    if (isEraseMode) {
-        handleDotInteraction(rowIndex, colIndex);
     }
 }
 
@@ -206,7 +226,7 @@ function handleKeyUp(e) {
         if (activeKeys.size === 0) {
             if (dotKeys.has(key) || spaceKeys.has(key)) {
                 moveCursor(0, 1);
-                playKeySound();
+                playSoundSafely(keySound);
             } else if (!movementKeys.has(key)) { // Prevent cursor movement on arrow key release
                 handleAction(action);
             }
@@ -223,7 +243,7 @@ function handleKeyUp(e) {
 function handleAction(action) {
     if (action === 'linespace') {
         moveCursor(1, 0);
-        playKeySound();
+        playSoundSafely(keySound);
     } else if (action === 'up') {
         moveCursor(-1, 0);
     } else if (action === 'down') {
@@ -231,11 +251,11 @@ function handleAction(action) {
     } else if (action === 'backspace') {
         if (cursor.col > 0) {
             moveCursor(0, -1);
-            playKeySound();
+            playSoundSafely(keySound);
         }
     } else if (action === 'space') {
         moveCursor(0, 1);
-        playKeySound();
+        playSoundSafely(keySound);
     }
 }
 
@@ -247,6 +267,8 @@ function rotateSlider() {
     }, 1000);
 }
 
+// Replace these functions with improved versions for more precise erasing
+
 function renderBrailleCell(cell, rowIndex, colIndex) {
     const isCurrentCell = rowIndex === cursor.row && colIndex === cursor.col;
     const cellElement = document.createElement('div');
@@ -255,11 +277,29 @@ function renderBrailleCell(cell, rowIndex, colIndex) {
     const dotContainer = document.createElement('div');
     dotContainer.className = 'braille-dot-container';
 
-    [0, 3, 1, 4, 2, 5].forEach(i => {
+    // The dots are ordered in visual order: 1,4,2,5,3,6 which maps to array indices 0,3,1,4,2,5
+    [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
         const dot = document.createElement('div');
-        dot.className = `braille-dot ${cell[i] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-        dot.addEventListener('mousedown', () => handleMouseDown(rowIndex, colIndex));
-        dot.addEventListener('mouseenter', () => handleMouseEnter(rowIndex, colIndex));
+        dot.className = `braille-dot ${cell[dotIndex] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+        
+        // Store dot data as attributes for eraser tool
+        dot.dataset.row = rowIndex;
+        dot.dataset.col = colIndex;
+        dot.dataset.dotIndex = dotIndex;
+        
+        // Add event listeners for eraser tool
+        dot.addEventListener('mousedown', (e) => {
+            if (isEraseMode) {
+                eraseDot(rowIndex, colIndex, dotIndex);
+            }
+        });
+        
+        dot.addEventListener('mouseenter', (e) => {
+            if (isEraseMode && isMouseDown) {
+                eraseDot(rowIndex, colIndex, dotIndex);
+            }
+        });
+        
         dotContainer.appendChild(dot);
     });
 
@@ -267,16 +307,75 @@ function renderBrailleCell(cell, rowIndex, colIndex) {
     return cellElement;
 }
 
+// New function to erase a specific dot without playing the embossing sound
+function eraseDot(rowIndex, colIndex, dotIndex) {
+    if (grid[rowIndex][colIndex][dotIndex] === 1) {
+        grid[rowIndex][colIndex][dotIndex] = 0;
+        
+        // Remove the sound playback - erasing should be silent
+        // No playSoundSafely(keySound) here
+        
+        // Only re-render the grid if a dot was actually erased
+        renderBrailleGrid();
+    }
+}
+
+// Replace the existing handleMouseDown function
+function handleMouseDown(e) {
+    isMouseDown = true;
+    
+    // Ensure focus is maintained on the app container
+    const appContainer = document.getElementById('braille-writer-app');
+    if (appContainer) {
+        appContainer.focus();
+    }
+}
+
+// Update mouse handling to work with document-level events
+document.addEventListener('mousedown', handleMouseDown);
+document.addEventListener('mouseup', handleMouseUp);
+
+// Improve the erase mode button to provide better visual feedback
+eraseModeBtn.addEventListener('click', () => {
+    isEraseMode = !isEraseMode;
+    eraseModeBtn.classList.toggle('active', isEraseMode);
+    
+    // Toggle the erase-mode class on the braille grid
+    brailleGrid.classList.toggle('erase-mode', isEraseMode);
+    
+    // Change cursor to indicate eraser mode
+    if (isEraseMode) {
+        brailleGrid.style.cursor = 'crosshair';
+    } else {
+        brailleGrid.style.cursor = 'default';
+    }
+});
+
 function renderBrailleGrid() {
-    brailleGrid.innerHTML = '';
-    grid.forEach((row, rowIndex) => {
+    brailleGrid.innerHTML = '';  // Clear existing content
+    
+    // Create visible rows based on data
+    for (let i = 0; i < ROWS; i++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'braille-row';
-        row.forEach((cell, colIndex) => {
-            rowElement.appendChild(renderBrailleCell(cell, rowIndex, colIndex));
-        });
+        
+        for (let j = 0; j < COLS; j++) {
+            const cellElement = renderBrailleCell(grid[i][j], i, j);
+            rowElement.appendChild(cellElement);
+        }
+        
         brailleGrid.appendChild(rowElement);
-    });
+    }
+    
+    // Scroll to make cursor visible
+    const currentCell = document.querySelector('.current-cell');
+    if (currentCell) {
+        currentCell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+        });
+    }
 }
 
 // Function to handle dot button clicks
@@ -339,12 +438,6 @@ function handleTouchCancel(e) {
 // Event listeners
 document.addEventListener('keydown', handleKeyDown);
 document.addEventListener('keyup', handleKeyUp);
-document.addEventListener('mouseup', handleMouseUp);
-
-eraseModeBtn.addEventListener('click', () => {
-    isEraseMode = !isEraseMode;
-    eraseModeBtn.classList.toggle('active', isEraseMode);
-});
 
 allClearBtn.addEventListener('click', () => {
     grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
@@ -356,7 +449,7 @@ slider.addEventListener('input', (e) => {
     updateCellCount();
     renderBrailleGrid();
     rotateSlider();
-    checkBellWarning();
+    checkBellWarning(); // Make sure we check for bell warning here
 });
 
 // Event listeners for dot buttons
@@ -444,20 +537,176 @@ toggleKeySound.addEventListener('change', (e) => {
 
 function checkBellWarning() {
     const warningPosition = COLS - bellWarningSpaces;
-    if (isBellEnabled && cursor.col === warningPosition && cursor.col !== previousBellWarningPosition) {
-        dingSound.play();
-        previousBellWarningPosition = cursor.col; // Update previous warning position
+    
+    // Debug log to verify position calculation
+    console.log(`Current pos: ${cursor.col}, Warning pos: ${warningPosition}, Bell spaces: ${bellWarningSpaces}`);
+    
+    if (isBellEnabled && cursor.col === warningPosition) {
+        // Always play bell when reaching warning position, regardless of previous position
+        playSoundSafely(dingSound);
+        previousBellWarningPosition = cursor.col;
+    }
+    
+    // Reset previous warning position when moving away from warning position
+    if (cursor.col !== warningPosition) {
+        previousBellWarningPosition = -1;
     }
 }
 
 // Play key sound
 function playKeySound() {
     if (isKeySoundEnabled) {
-        keySound.play();
+        playSoundSafely(keySound);
     }
 }
+
+// Prevent zooming when double-tapping on controls
+document.querySelectorAll('.key, .small-button').forEach(element => {
+    element.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        // Existing handler code...
+    }, { passive: false });
+});
 
 // Initialize the app
 slider.value = cursor.col;
 updateCellCount();
 renderBrailleGrid();
+
+function setupFocusManagement() {
+    // Make the braille writer app container focusable
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    
+    // Set initial focus to the app container when page loads
+    appContainer.focus();
+    
+    // Re-focus app when clicking or tapping anywhere in the app
+    appContainer.addEventListener('click', () => {
+        appContainer.focus();
+    });
+    
+    // Prevent losing focus when interacting with buttons and controls
+    // But EXCLUDE the slider from preventDefault to keep it draggable
+    document.querySelectorAll('.key, .small-button').forEach(element => {
+        element.addEventListener('mousedown', (e) => {
+            // Prevent these elements from stealing focus
+            e.preventDefault();
+        });
+    });
+    
+    // Special handling for slider to maintain focus while still allowing interaction
+    const slider = document.getElementById('slider');
+    slider.addEventListener('mousedown', () => {
+        // Re-focus app container after a slight delay to allow slider interaction to start
+        setTimeout(() => {
+            appContainer.focus();
+        }, 10);
+    });
+    
+    // Prevent Tab key from moving focus out of the app
+    appContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+        }
+    });
+}
+
+// Call this function after initializing the app
+slider.value = cursor.col;
+updateCellCount();
+renderBrailleGrid();
+setupFocusManagement(); // Add this line
+
+window.addEventListener('beforeunload', () => {
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+});
+
+// Add this code at the end of your script.js file
+
+// Focus management for keyboard input
+function setupFocusManagement() {
+    // Make the braille writer app container focusable
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    
+    // Set initial focus to the app container when page loads
+    window.addEventListener('load', () => {
+        appContainer.focus();
+    });
+    
+    // Set focus immediately (in case DOM already loaded)
+    appContainer.focus();
+    
+    // Re-focus app when clicking anywhere in the app
+    appContainer.addEventListener('mousedown', () => {
+        appContainer.focus();
+    });
+    
+    // Prevent Tab key from moving focus out of the app
+    appContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') {
+            e.preventDefault();
+        }
+    });
+    
+    // Ensure focus remains on the app container even when interacting with buttons
+    document.querySelectorAll('.key, .small-button').forEach(button => {
+        button.addEventListener('mousedown', (e) => {
+            // Allow the click to register but don't change focus
+            e.preventDefault();
+        });
+    });
+    
+    // Special handling for slider to maintain functionality
+    const slider = document.getElementById('slider');
+    slider.addEventListener('mousedown', () => {
+        // Refocus after slight delay to allow slider interaction
+        setTimeout(() => {
+            appContainer.focus();
+        }, 10);
+    });
+    
+    // Instructions drawer toggle shouldn't steal focus
+    const instructionsToggle = document.getElementById('instructions-toggle');
+    instructionsToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Toggle instructions drawer
+        const drawer = document.getElementById('instructions-drawer');
+        drawer.classList.toggle('open');
+        // Return focus to app after toggle
+        setTimeout(() => {
+            appContainer.focus();
+        }, 100);
+    });
+    
+    // Handle touch events as well
+    appContainer.addEventListener('touchstart', () => {
+        appContainer.focus();
+    });
+}
+
+// Call the focus management setup
+setupFocusManagement();
+
+// Update the existing window.beforeunload event handler to warn about data loss
+
+window.addEventListener('beforeunload', (e) => {
+    // Clean up intervals and timeouts
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+    
+    // Check if there's any data in the grid that would be lost
+    const hasContent = grid.some(row => 
+        row.some(cell => cell.some(dot => dot === 1))
+    );
+    
+    // Show warning only if there's content to lose
+    if (hasContent) {
+        // Standard message that will appear in most browsers
+        const message = "You have unsaved braille text. If you leave now, your work will be lost.";
+        e.returnValue = message; // Standard for most browsers
+        return message; // For older browsers
+    }
+});

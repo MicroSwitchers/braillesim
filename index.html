@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Braille Writer Simulator</title>
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -19,8 +19,8 @@
         <div class="card-content">
             <div id="braille-grid" class="braille-grid"></div>
             <div class="slider-container">
-                <input type="range" id="slider" min="0" max="24" value="0" class="slider">
-                <div id="cell-count" class="cell-count">Cell: 1 / 25</div>
+                <input type="range" id="slider" min="0" max="30" value="0" class="slider">
+                <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
             </div>
             <div class="key-container">
                 <button class="key round-key" id="linespace-btn">LS (a)</button>
@@ -76,5 +76,5 @@
     <audio id="ding-sound" src="ding.wav" preload="auto"></audio>
     <audio id="key-sound" src="key.wav" preload="auto"></audio>
     <script src="script.js"></script>
-</body>
+    </body>
 </html>
