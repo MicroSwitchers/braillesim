@@ -428,7 +428,7 @@ body {
 
 /* Standard size dot keys - make desktop keys slightly wider */
 .key.dot-key {
-    width: 120px; /* Increased from 75px */
+    width: 110px; 
     height: 90px;
     border-top-left-radius: 30px;
     border-top-right-radius: 30px;
@@ -460,7 +460,7 @@ body {
 
 /* Standard size dot keys - wider for better touch */
 .key.dot-key {
-    width: 75px; /* Increased from 60px for better touch targets */
+    width: 110px; /* Increased from 60px for better touch targets */
     height: 90px;
     border-top-left-radius: 30px;
     border-top-right-radius: 30px;
@@ -512,7 +512,7 @@ body {
 
 .space-key {
     width: 95px; /* Reduced from 100px */
-    height: 70px;
+    height: 90px;
     border-radius: 30px;
     margin: 2px;
 }
