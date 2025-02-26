@@ -372,6 +372,10 @@ function renderBrailleGrid() {
                 // Visual order mapping for dots
                 const visualOrder = [0, 3, 1, 4, 2, 5];
                 
+                // Modify the dot creation in renderBrailleGrid
+                // Find the code where you create dot elements (around line 733)
+                // Replace or modify this section:
+
                 for (let k = 0; k < 6; k++) {
                     const dotElement = document.createElement('div');
                     dotElement.className = 'braille-dot braille-dot-inactive';
@@ -383,7 +387,7 @@ function renderBrailleGrid() {
                     
                     dotContainer.appendChild(dotElement);
                 }
-                
+
                 cellElement.appendChild(dotContainer);
                 rowElement.appendChild(cellElement);
             }
@@ -413,6 +417,10 @@ function renderBrailleGrid() {
             
             eraseDot(row, col, dotIndex);
         }, true); // Use capture phase for better detection
+
+        // Add touch event handlers for erasing dots
+        brailleGrid.addEventListener('touchstart', handleTouchEraser, { passive: false });
+        brailleGrid.addEventListener('touchmove', handleTouchEraser, { passive: false });
     }
     
     // Update only what needs to change - cell classes and dot states
@@ -958,3 +966,68 @@ window.addEventListener('beforeunload', (e) => {
         return message;
     }
 });
+
+// Add these new functions for touch-based erasing
+function handleTouchEraser(e) {
+    if (!isEraseMode) return;
+    
+    e.preventDefault(); // Prevent scrolling while erasing
+    
+    Array.from(e.changedTouches).forEach(touch => {
+        // Get the element under the touch point
+        const touchTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+        
+        // Check if we're touching a dot
+        const dot = touchTarget.closest('.braille-dot');
+        if (dot && dot.classList.contains('braille-dot-active')) {
+            const row = parseInt(dot.dataset.row);
+            const col = parseInt(dot.dataset.col);
+            const dotIndex = parseInt(dot.dataset.dotIndex);
+            
+            // Only erase if the dot is active
+            eraseDot(row, col, dotIndex);
+        }
+    });
+}
+
+// Replace the eraseDot function with this improved version
+function eraseDot(rowIndex, colIndex, dotIndex) {
+    // Check if the dot is actually raised before erasing
+    if (grid[rowIndex][colIndex][dotIndex] === 1) {
+        grid[rowIndex][colIndex][dotIndex] = 0;
+        
+        // Provide visual feedback for touch devices
+        const dot = document.querySelector(`.braille-dot[data-row="${rowIndex}"][data-col="${colIndex}"][data-dot-index="${dotIndex}"]`);
+        if (dot) {
+            // Add a brief animation effect
+            dot.classList.add('erasing');
+            setTimeout(() => {
+                dot.classList.remove('erasing');
+            }, 300);
+        }
+        
+        // Only re-render the specific dot that changed for better performance
+        updateDotState(rowIndex, colIndex, dotIndex, false);
+    }
+}
+
+// Add this new function to update a specific dot without re-rendering everything
+function updateDotState(row, col, dotIndex, isActive) {
+    const cell = brailleGrid.children[row]?.children[col];
+    if (!cell) return;
+    
+    const dotContainer = cell.firstChild;
+    if (!dotContainer) return;
+    
+    // Find the dot with the matching data attributes
+    const dot = Array.from(dotContainer.children).find(
+        d => parseInt(d.dataset.row) === row && 
+             parseInt(d.dataset.col) === col && 
+             parseInt(d.dataset.dotIndex) === dotIndex
+    );
+    
+    if (dot) {
+        // Update the dot's class without re-rendering the entire grid
+        dot.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+    }
+}

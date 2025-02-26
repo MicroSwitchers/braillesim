@@ -973,3 +973,64 @@ input[type="checkbox"] {
         height: 36px;
     }
 }
+
+/* Add this to your CSS for better erase mode visual feedback */
+
+/* Make eraser mode more obvious */
+.braille-grid.erase-mode {
+    border-color: #ff3333;
+}
+
+.erase-mode .braille-dot-active {
+    cursor: pointer;
+}
+
+/* Animation for erasing dots */
+@keyframes eraseAnimation {
+    0% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.2);
+        opacity: 0.5;
+        background-color: #ff3333;
+    }
+    100% {
+        transform: scale(0.8);
+        opacity: 0;
+    }
+}
+
+.braille-dot.erasing {
+    animation: eraseAnimation 0.3s forwards;
+}
+
+/* Make touch targets much bigger in erase mode on mobile */
+@media (max-width: 768px) {
+    .erase-mode .braille-dot {
+        position: relative;
+    }
+    
+    /* Invisible larger touch area */
+    .erase-mode .braille-dot-active::after {
+        content: '';
+        position: absolute;
+        width: 24px;
+        height: 24px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: transparent;
+        z-index: 10;
+    }
+}
+
+/* Make the erase mode button more obvious when active */
+#erase-mode-btn.active {
+    background-image: linear-gradient(to bottom, #ff5e5e, #ff3333 50%, #e62e2e);
+    color: white;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.5);
+    border-color: #ff3333;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+}
