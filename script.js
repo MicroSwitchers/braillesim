@@ -615,14 +615,70 @@ backspaceBtn.addEventListener('click', () => {
     document.dispatchEvent(keyupEvent);
 });
 
-// Instructions drawer functionality
-const instructionsDrawer = document.getElementById('instructions-drawer');
-const instructionsToggle = document.getElementById('instructions-toggle');
+// Replace the entire instructions drawer event handler section with this consolidated version
 
-instructionsToggle.addEventListener('click', () => {
-    instructionsDrawer.classList.toggle('open');
-    instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions & Settings' : 'Instructions & Settings';
-});
+// Instructions drawer functionality - CONSOLIDATED VERSION
+function setupInstructionsDrawer() {
+    const instructionsDrawer = document.getElementById('instructions-drawer');
+    const instructionsToggle = document.getElementById('instructions-toggle');
+    const appContainer = document.getElementById('braille-writer-app');
+    
+    // Remove any existing event listeners (important cleanup)
+    instructionsToggle.removeEventListener('click', () => {});
+    
+    // Add the consolidated click handler
+    instructionsToggle.addEventListener('click', (e) => {
+        // Toggle the drawer state
+        instructionsDrawer.classList.toggle('open');
+        
+        // Update button text
+        instructionsToggle.textContent = instructionsDrawer.classList.contains('open') 
+            ? 'Close Instructions & Settings' 
+            : 'Instructions & Settings';
+        
+        // Return focus to app after drawer interaction
+        setTimeout(() => {
+            appContainer.focus();
+        }, 100);
+    });
+    
+    // Add touch support
+    instructionsToggle.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.add('active');
+    }, { passive: false });
+    
+    instructionsToggle.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.remove('active');
+        // Trigger the click event after the touch
+        instructionsToggle.click();
+    }, { passive: false });
+}
+
+// Call this function once in the initialization block
+// Add this line to your initApp function
+// initApp() function (around line 1500):
+
+function initApp() {
+    // Initial values
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Set up focus management (once)
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Set up instructions drawer (just add this line)
+    setupInstructionsDrawer();
+    
+    // Rest of your existing initApp code...
+}
+
+// Make sure this function is called only once
+initApp();
 
 // Replace the fullscreen button handler with this improved version
 
@@ -1045,6 +1101,9 @@ function initApp() {
     document.addEventListener('touchend', (e) => {
         e.preventDefault();
     }, { passive: false });
+    
+    // Set up instructions drawer (just add this line)
+    setupInstructionsDrawer();
 }
 
 // Call initialization once
