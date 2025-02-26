@@ -1999,3 +1999,76 @@ function fixTouchDefaultBehaviors() {
 }
 
 fixTouchDefaultBehaviors();
+
+// ADD THIS AT THE VERY END OF YOUR FILE - AFTER ALL OTHER CODE
+
+// FINAL FIX FOR TOUCH SCREEN CARRIAGE LEVER SYNCHRONIZATION
+(function() {
+    console.log("Applying FINAL touch screen carriage lever fix...");
+    
+    // 1. Create a universal function to sync slider with cursor
+    function syncSliderWithCursor() {
+        const slider = document.getElementById('slider');
+        if (slider && cursor && cursor.col !== undefined) {
+            slider.value = cursor.col;
+            console.log("Synced slider to cursor position:", cursor.col);
+        }
+    }
+    
+    // 2. Intercept all key functions that can change cursor position
+    const originalHandleDotButtonClick = window.handleDotButtonClick;
+    window.handleDotButtonClick = function(dotIndex) {
+        originalHandleDotButtonClick(dotIndex);
+        syncSliderWithCursor(); // Sync after dot button click
+    };
+    
+    const originalHandleAction = window.handleAction;
+    window.handleAction = function(action) {
+        originalHandleAction(action);
+        syncSliderWithCursor(); // Sync after any action (space, backspace, etc.)
+    };
+    
+    // 3. Create a direct link between touch events and slider position
+    const dotButtons = document.querySelectorAll('.dot-key');
+    dotButtons.forEach(button => {
+        // Add touchend event to sync slider
+        button.addEventListener('touchend', function() {
+            // Small delay to let the cursor update complete
+            setTimeout(syncSliderWithCursor, 20);
+        }, { passive: false });
+    });
+    
+    // Also handle space, linespace, and backspace buttons
+    ['space-btn', 'linespace-btn', 'backspace-btn'].forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            button.addEventListener('touchend', function() {
+                // Small delay to let the cursor update complete
+                setTimeout(syncSliderWithCursor, 20); 
+            }, { passive: false });
+        }
+    });
+    
+    // 4. Create a watchdog that periodically checks for cursor/slider mismatch
+    function createSliderWatchdog() {
+        setInterval(function() {
+            const slider = document.getElementById('slider');
+            if (slider && parseInt(slider.value) !== cursor.col) {
+                slider.value = cursor.col;
+                // Don't log this to avoid console spam
+            }
+        }, 100); // Check every 100ms
+    }
+    
+    // 5. Sync slider immediately on touch interaction with any part of app
+    document.getElementById('braille-writer-app').addEventListener('touchstart', function() {
+        // Ensure cursor and slider are in sync
+        setTimeout(syncSliderWithCursor, 10);
+    }, { passive: true });
+    
+    // Apply all fixes
+    syncSliderWithCursor(); // Initial sync
+    createSliderWatchdog(); // Start watchdog
+    
+    console.log("✓ Touch screen carriage lever fix applied successfully!");
+})();
