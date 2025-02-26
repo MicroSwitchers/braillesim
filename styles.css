@@ -401,9 +401,10 @@ body {
     box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
 }
 
+/* Standard size dot keys - wider for better touch */
 .key.dot-key {
-    width: 60px; /* Reduced from 63px */
-    height: 90px; /* Slightly reduced from 91px */
+    width: 75px; /* Increased from 60px for better touch targets */
+    height: 90px;
     border-top-left-radius: 30px;
     border-top-right-radius: 30px;
     border-bottom-left-radius: 50px;
@@ -608,7 +609,7 @@ input[type="checkbox"] {
         height: 40px;
     }
     .dot-key {
-        width: 70px;
+        width: 85px; /* Increased from 70px */
         height: 80px;
     }
     .small-button {
@@ -622,21 +623,32 @@ input[type="checkbox"] {
     .cell-count {
         right: 25px; /* Matching right padding for mobile */
     }
+    
+    /* May need to adjust container on very small screens */
+    @media (max-width: 380px) {
+        .key-container {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+    }
 }
 
 /* Add a media query to ensure proper scaling on smaller screens */
 @media (min-width: 641px) and (max-width: 800px) {
     .key.dot-key {
-        width: 58px; /* Further reduce width on medium screens */
+        width: 72px; /* Increased from 58px */
         height: 85px;
     }
     
+    /* Adjust space key to maintain balance */
     .space-key {
-        width: 90px;
+        width: 100px;
     }
     
-    .card {
-        padding: 0;
+    /* Adjust container spacing */
+    .key-container {
+        gap: 3px; /* Slightly reduced gap to fit wider keys */
     }
 }
 
