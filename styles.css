@@ -382,7 +382,7 @@ body {
     border: 2px solid #ffd700;
     box-shadow: 0 0 0 2px #ffd700, 0 0.5em 0 0 #2e2e2e;
     position: relative;
-    transform: rotate(-10deg);
+    transform: rotate(0deg);
 }
 
 .slider.rotated::-webkit-slider-thumb {
@@ -399,7 +399,7 @@ body {
     border: 2px solid #ffd700;
     box-shadow: 0 0 0 2px #ffd700, 0 0.5em 0 0 #1a1a1a;
     position: relative;
-    transform: rotate(-10deg);
+    transform: rotate(10deg);
 }
 
 .slider.rotated::-moz-range-thumb {

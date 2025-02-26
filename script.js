@@ -776,7 +776,7 @@ function setupFocusManagement() {
     // Special handling for slider to maintain functionality
     const slider = document.getElementById('slider');
     slider.addEventListener('mousedown', () => {
-        // Refocus after slight delay to allow slider interaction
+        // Refocus app container after a slight delay to allow slider interaction
         setTimeout(() => {
             appContainer.focus();
         }, 10);
@@ -1155,68 +1155,6 @@ function initialize() {
     console.log("App initialization completed successfully!");
 }
 
-// Call this ONCE - this is the ONLY initialization call in the file
-initialize();
-
-// Add this at the END of your script.js file, REPLACING all other initialization functions
-
-// Cleanup and remove ALL existing handlers - vital to fix conflicts
-function cleanupDuplicateHandlers() {
-    console.log("Cleaning up duplicate handlers...");
-    // Clear all intervals and timeouts
-    clearInterval(movementInterval);
-    clearTimeout(sliderTimeout);
-    
-    // Clean up ALL button handlers by cloning them
-    const buttonIds = [
-        'all-clear-btn', 
-        'erase-mode-btn',
-        'fullscreen-btn',
-        'instructions-toggle'
-    ];
-    
-    buttonIds.forEach(id => {
-        const button = document.getElementById(id);
-        if (button) {
-            // Replace with clone to remove ALL event handlers
-            const clone = button.cloneNode(true);
-            if (button.parentNode) {
-                button.parentNode.replaceChild(clone, button);
-            }
-        }
-    });
-    
-    // Remove any existing fullscreen event handlers
-    document.removeEventListener('fullscreenchange', () => {});
-}
-
-// Master initialization function - THE ONLY ONE
-function masterInitialize() {
-    // First clean up any existing handlers to start fresh
-    cleanupDuplicateHandlers();
-    
-    // Basic UI initialization
-    slider.value = cursor.col;
-    updateCellCount();
-    renderBrailleGrid();
-    
-    // Focus management setup
-    const appContainer = document.getElementById('braille-writer-app');
-    appContainer.setAttribute('tabindex', '0');
-    appContainer.focus();
-    
-    // Set up special buttons with proper toggle states
-    setupToggleButtons();
-    
-    // Register fullscreen handler
-    setupFullscreenHandler();
-    
-    // Set up drawer AFTER cleaning up handlers
-    setupInstructionsDrawer();
-    
-    console.log("Master initialization completed successfully!");
-}
-
 // Function to set up all toggle buttons correctly
 function setupToggleButtons() {
     // Get fresh references to buttons after cleanup
@@ -1247,18 +1185,7 @@ function setupToggleButtons() {
     eraseModeBtn.addEventListener('touchend', (e) => {
         e.preventDefault();
         e.stopPropagation();
-        
-        // Toggle state
-        isEraseMode = !isEraseMode;
-        
-        // Update visual appearance
-        eraseModeBtn.classList.toggle('active', isEraseMode);
-        brailleGrid.classList.toggle('erase-mode', isEraseMode);
-        
-        // Update cursor for visual feedback
-        brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
-        
-        console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'} (touch)`);
+        eraseModeBtn.click(); // Trigger the click event
     }, { passive: false });
 }
 
@@ -1275,12 +1202,10 @@ function setupFullscreenHandler() {
                     isFullscreen = true;
                     fullscreenBtn.classList.add('active');
                     fullscreenBtn.textContent = "Exit Full";
-                    
-                    // Apply fullscreen styles
                     appElement.classList.add('fullscreen-mode');
                     document.body.classList.add('fullscreen-active');
                 }).catch(err => {
-                    console.error(`Fullscreen error: ${err.message}`);
+                    console.error("Fullscreen request failed:", err);
                 });
             } else {
                 // Exit fullscreen
@@ -1288,12 +1213,10 @@ function setupFullscreenHandler() {
                     isFullscreen = false;
                     fullscreenBtn.classList.remove('active');
                     fullscreenBtn.textContent = "Full Screen";
-                    
-                    // Remove fullscreen styles
                     appElement.classList.remove('fullscreen-mode');
                     document.body.classList.remove('fullscreen-active');
                 }).catch(err => {
-                    console.error(`Exit fullscreen error: ${err.message}`);
+                    console.error("Exit fullscreen failed:", err);
                 });
             }
         } catch (e) {
@@ -1301,19 +1224,399 @@ function setupFullscreenHandler() {
         }
     });
     
-    // Fullscreen change handler
-    document.addEventListener('fullscreenchange', () => {
-        if (!document.fullscreenElement && isFullscreen) {
-            isFullscreen = false;
-            fullscreenBtn.classList.remove('active');
-            fullscreenBtn.textContent = "Full Screen";
-            
-            appElement.classList.remove('fullscreen-mode');
-            document.body.classList.remove('fullscreen-active');
+    // Add touch support
+    fullscreenBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    fullscreenBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fullscreenBtn.click(); // Trigger the click event
+    }, { passive: false });
+}
+
+// CALL ONLY THIS FUNCTION ONCE - DELETE ALL OTHER initialization calls
+masterInitialize();
+
+// Add this function to properly set up the slider
+function setupSliderControls() {
+    // Make sure we have a fresh reference to the slider
+    const slider = document.getElementById('slider');
+    
+    // Clear any existing event listeners by cloning the element
+    const newSlider = slider.cloneNode(true);
+    if (slider.parentNode) {
+        slider.parentNode.replaceChild(newSlider, slider);
+    }
+    
+    // Update our reference to the new slider element
+    const updatedSlider = document.getElementById('slider');
+    
+    // Set initial value
+    updatedSlider.value = cursor.col;
+    
+    // Add the input event listener
+    updatedSlider.addEventListener('input', (e) => {
+        cursor.col = parseInt(e.target.value);
+        updateCellCount();
+        renderBrailleGrid();
+        rotateSlider();
+        checkBellWarning();
+    });
+    
+    console.log("Slider controls initialized");
+}
+
+// Modify the masterInitialize function to call setupSliderControls
+function masterInitialize() {
+    // First clean up any existing handlers to start fresh
+    cleanupDuplicateHandlers();
+    
+    // Basic UI initialization
+    const slider = document.getElementById('slider');
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Set up the slider controls properly
+    setupSliderControls();
+    
+    // Focus management setup
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Set up special buttons with proper toggle states
+    setupToggleButtons();
+    
+    // Register fullscreen handler
+    setupFullscreenHandler();
+    
+    // Set up drawer AFTER cleaning up handlers
+    setupInstructionsDrawer();
+    
+    console.log("Master initialization completed successfully!");
+}
+
+// Add this function to clean up duplicate handlers
+function cleanupDuplicateHandlers() {
+    // Elements that need cleanup
+    const elementsToClean = [
+        'slider', 
+        'erase-mode-btn', 
+        'fullscreen-btn',
+        'instructions-toggle'
+    ];
+    
+    // Clone and replace each element to remove existing listeners
+    elementsToClean.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            const clone = element.cloneNode(true);
+            element.parentNode.replaceChild(clone, element);
         }
     });
     
-    // Touch support for fullscreen button
+    console.log("Cleaned up duplicate handlers");
+}
+
+// Add this function to properly set up the slider
+function setupSliderControls() {
+    // Get fresh reference to slider after cleanup
+    const slider = document.getElementById('slider');
+    
+    // Set initial value
+    slider.value = cursor.col;
+    
+    // Add the input event listener
+    slider.addEventListener('input', (e) => {
+        cursor.col = parseInt(e.target.value);
+        updateCellCount();
+        renderBrailleGrid();
+        rotateSlider();
+        checkBellWarning();
+    });
+    
+    console.log("Slider controls initialized");
+}
+
+// Add this function to set up toggle buttons correctly
+function setupToggleButtons() {
+    // Get fresh references after cleanup
+    const eraseModeBtn = document.getElementById('erase-mode-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    
+    // ERASE MODE BUTTON
+    eraseModeBtn.addEventListener('click', () => {
+        // Toggle state
+        isEraseMode = !isEraseMode;
+        
+        // Update visual appearance
+        eraseModeBtn.classList.toggle('active', isEraseMode);
+        brailleGrid.classList.toggle('erase-mode', isEraseMode);
+        
+        // Update cursor for visual feedback
+        brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
+        
+        console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'}`);
+    });
+    
+    // Touch support for erase mode button
+    eraseModeBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    eraseModeBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        eraseModeBtn.click(); // Trigger the click event
+    }, { passive: false });
+}
+
+// Setup fullscreen functionality
+function setupFullscreenHandler() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const appElement = document.getElementById('braille-writer-app');
+    
+    fullscreenBtn.addEventListener('click', () => {
+        try {
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                appElement.requestFullscreen().then(() => {
+                    isFullscreen = true;
+                    fullscreenBtn.classList.add('active');
+                    fullscreenBtn.textContent = "Exit Full";
+                    appElement.classList.add('fullscreen-mode');
+                    document.body.classList.add('fullscreen-active');
+                }).catch(err => {
+                    console.error("Fullscreen request failed:", err);
+                });
+            } else {
+                // Exit fullscreen
+                document.exitFullscreen().then(() => {
+                    isFullscreen = false;
+                    fullscreenBtn.classList.remove('active');
+                    fullscreenBtn.textContent = "Full Screen";
+                    appElement.classList.remove('fullscreen-mode');
+                    document.body.classList.remove('fullscreen-active');
+                }).catch(err => {
+                    console.error("Exit fullscreen failed:", err);
+                });
+            }
+        } catch (e) {
+            console.error("Fullscreen toggle failed:", e);
+        }
+    });
+    
+    // Add touch support
+    fullscreenBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    fullscreenBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fullscreenBtn.click(); // Trigger the click event
+    }, { passive: false });
+}
+
+// Modify the masterInitialize function to call all setup functions
+function masterInitialize() {
+    // First clean up any existing handlers to start fresh
+    cleanupDuplicateHandlers();
+    
+    // Basic UI initialization
+    const slider = document.getElementById('slider');
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Set up the slider controls properly
+    setupSliderControls();
+    
+    // Focus management setup
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Set up special buttons with proper toggle states
+    setupToggleButtons();
+    
+    // Register fullscreen handler
+    setupFullscreenHandler();
+    
+    // Set up drawer AFTER cleaning up handlers
+    setupInstructionsDrawer();
+    
+    console.log("Master initialization completed successfully!");
+}
+
+// ADD THIS COMPLETE INITIALIZATION SYSTEM
+
+// Global references - IMPORTANT: always get fresh references
+const elements = {
+    get slider() { return document.getElementById('slider'); },
+    get eraseModeBtn() { return document.getElementById('erase-mode-btn'); },
+    get fullscreenBtn() { return document.getElementById('fullscreen-btn'); },
+    get instructionsToggle() { return document.getElementById('instructions-toggle'); },
+    get brailleGrid() { return document.getElementById('braille-grid'); },
+    get appContainer() { return document.getElementById('braille-writer-app'); }
+};
+
+// Master initialization function - the ONLY one to call
+function initMaster() {
+    console.log("Starting master initialization...");
+    
+    // First cleanup ALL event listeners by replacing elements
+    cleanupAllEventListeners();
+    
+    // Set up each component with FRESH element references
+    setupSliderWithEvents();
+    setupEraseModeButtonWithEvents();
+    setupFullscreenButtonWithEvents();
+    setupInstructionsDrawerWithEvents();
+    
+    // Core UI setup
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Focus management
+    setupFocusHandling();
+    
+    console.log("Master initialization complete!");
+}
+
+// Clean ALL event listeners
+function cleanupAllEventListeners() {
+    console.log("Cleaning up all event listeners...");
+    
+    const elementsToClean = [
+        'slider', 
+        'erase-mode-btn', 
+        'fullscreen-btn',
+        'instructions-toggle'
+    ];
+    
+    // Clone and replace each element
+    elementsToClean.forEach(id => {
+        const element = document.getElementById(id);
+        if (element && element.parentNode) {
+            const clone = element.cloneNode(true);
+            element.parentNode.replaceChild(clone, element);
+            console.log(`✓ Cleaned up: ${id}`);
+        }
+    });
+    
+    // Clear any running timers
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+}
+
+// Set up slider with events using FRESH element reference
+function setupSliderWithEvents() {
+    console.log("Setting up slider controls...");
+    
+    // ALWAYS get a fresh reference after cleanup
+    const slider = elements.slider;
+    
+    // Set initial value
+    slider.value = cursor.col;
+    
+    // Add event listener
+    slider.addEventListener('input', (e) => {
+        cursor.col = parseInt(e.target.value);
+        updateCellCount();
+        renderBrailleGrid();
+        rotateSlider();
+        checkBellWarning();
+        console.log("Slider moved to:", cursor.col);
+    });
+    
+    console.log("✓ Slider setup complete");
+}
+
+// Set up erase mode button with events
+function setupEraseModeButtonWithEvents() {
+    console.log("Setting up erase mode button...");
+    
+    // ALWAYS get a fresh reference after cleanup
+    const eraseModeBtn = elements.eraseModeBtn;
+    
+    // Reset visual state
+    eraseModeBtn.classList.toggle('active', isEraseMode);
+    elements.brailleGrid.classList.toggle('erase-mode', isEraseMode);
+    
+    // Click handler
+    eraseModeBtn.addEventListener('click', () => {
+        isEraseMode = !isEraseMode;
+        eraseModeBtn.classList.toggle('active', isEraseMode);
+        elements.brailleGrid.classList.toggle('erase-mode', isEraseMode);
+        elements.brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
+        console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'}`);
+    });
+    
+    // Touch support
+    eraseModeBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    eraseModeBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        eraseModeBtn.click();
+    }, { passive: false });
+    
+    console.log("✓ Erase mode button setup complete");
+}
+
+// Set up fullscreen button with events
+function setupFullscreenButtonWithEvents() {
+    console.log("Setting up fullscreen button...");
+    
+    // ALWAYS get a fresh reference after cleanup
+    const fullscreenBtn = elements.fullscreenBtn;
+    
+    // Reset visual state
+    fullscreenBtn.classList.toggle('active', isFullscreen);
+    fullscreenBtn.textContent = isFullscreen ? "Exit Full" : "Full Screen";
+    
+    // Click handler
+    fullscreenBtn.addEventListener('click', () => {
+        try {
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                elements.appContainer.requestFullscreen().then(() => {
+                    isFullscreen = true;
+                    fullscreenBtn.classList.add('active');
+                    fullscreenBtn.textContent = "Exit Full";
+                    elements.appContainer.classList.add('fullscreen-mode');
+                    document.body.classList.add('fullscreen-active');
+                }).catch(err => {
+                    console.error("Fullscreen request failed:", err);
+                });
+            } else {
+                // Exit fullscreen
+                document.exitFullscreen().then(() => {
+                    isFullscreen = false;
+                    fullscreenBtn.classList.remove('active');
+                    fullscreenBtn.textContent = "Full Screen";
+                    elements.appContainer.classList.remove('fullscreen-mode');
+                    document.body.classList.remove('fullscreen-active');
+                }).catch(err => {
+                    console.error("Exit fullscreen failed:", err);
+                });
+            }
+        } catch (e) {
+            console.error("Fullscreen toggle failed:", e);
+        }
+    });
+    
+    // Touch support
     fullscreenBtn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1324,7 +1627,275 @@ function setupFullscreenHandler() {
         e.stopPropagation();
         fullscreenBtn.click();
     }, { passive: false });
+    
+    console.log("✓ Fullscreen button setup complete");
 }
 
-// CALL ONLY THIS FUNCTION ONCE - DELETE ALL OTHER initialization calls
-masterInitialize();
+// Set up instructions drawer with events
+function setupInstructionsDrawerWithEvents() {
+    console.log("Setting up instructions drawer...");
+    
+    // ALWAYS get a fresh reference after cleanup
+    const instructionsToggle = elements.instructionsToggle;
+    const instructionsDrawer = document.getElementById('instructions-drawer');
+    
+    // Reset visual state
+    const isOpen = instructionsDrawer.classList.contains('open');
+    instructionsToggle.textContent = isOpen 
+        ? 'Close Instructions & Settings' 
+        : 'Instructions & Settings';
+    
+    // Click handler
+    instructionsToggle.addEventListener('click', () => {
+        instructionsDrawer.classList.toggle('open');
+        instructionsToggle.textContent = instructionsDrawer.classList.contains('open') 
+            ? 'Close Instructions & Settings' 
+            : 'Instructions & Settings';
+    });
+    
+    // Touch support
+    instructionsToggle.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.add('active');
+    }, { passive: false });
+    
+    instructionsToggle.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.remove('active');
+        instructionsToggle.click();
+    }, { passive: false });
+    
+    console.log("✓ Instructions drawer setup complete");
+}
+
+// Focus management
+function setupFocusHandling() {
+    console.log("Setting up focus management...");
+    
+    // Make app container focusable
+    elements.appContainer.setAttribute('tabindex', '0');
+    elements.appContainer.focus();
+    
+    // Event listeners for focus
+    elements.appContainer.addEventListener('click', () => elements.appContainer.focus());
+    elements.appContainer.addEventListener('mousedown', () => elements.appContainer.focus());
+    elements.appContainer.addEventListener('touchstart', () => elements.appContainer.focus());
+    
+    // Prevent Tab key from moving focus out
+    elements.appContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') e.preventDefault();
+    });
+    
+    console.log("✓ Focus management setup complete");
+}
+
+// CALL THIS AT THE END - DELETE ALL OTHER INITIALIZATION CALLS
+initMaster();
+
+// CRITICAL FIX - ADD THIS TO THE VERY END OF YOUR FILE
+
+// Simple function to fix the slider
+function fixCarriageLever() {
+    console.log("FIXING CARRIAGE LEVER");
+    
+    // Get the original slider
+    const originalSlider = document.getElementById('slider');
+    
+    // Create a completely new slider element
+    const newSlider = document.createElement('input');
+    newSlider.type = 'range';
+    newSlider.id = 'slider';
+    newSlider.min = '0';
+    newSlider.max = '30';
+    newSlider.value = cursor.col;
+    newSlider.className = 'slider';
+    
+    // Replace the old slider with the new one
+    if (originalSlider && originalSlider.parentNode) {
+        originalSlider.parentNode.replaceChild(newSlider, originalSlider);
+        console.log("Replaced slider with fresh element");
+    }
+    
+    // Add event listener to new slider
+    newSlider.addEventListener('input', (e) => {
+        cursor.col = parseInt(e.target.value);
+        updateCellCount();
+        renderBrailleGrid();
+        
+        // Call these functions if they exist
+        if (typeof rotateSlider === 'function') rotateSlider();
+        if (typeof checkBellWarning === 'function') checkBellWarning();
+        
+        console.log("Slider moved to:", cursor.col);
+    });
+    
+    console.log("✓ Carriage lever fixed!");
+    
+    // Also fix the erase mode and fullscreen buttons
+    fixEraseModeButton();
+    fixFullscreenButton();
+}
+
+// Fix erase mode button
+function fixEraseModeButton() {
+    const eraseModeBtn = document.getElementById('erase-mode-btn');
+    if (!eraseModeBtn) return;
+    
+    // Clone to remove existing listeners
+    const newEraseBtn = eraseModeBtn.cloneNode(true);
+    eraseModeBtn.parentNode.replaceChild(newEraseBtn, eraseModeBtn);
+    
+    // Add fresh event listener
+    newEraseBtn.addEventListener('click', () => {
+        isEraseMode = !isEraseMode;
+        newEraseBtn.classList.toggle('active', isEraseMode);
+        document.getElementById('braille-grid').classList.toggle('erase-mode', isEraseMode);
+        document.getElementById('braille-grid').style.cursor = isEraseMode ? 'crosshair' : 'default';
+    });
+}
+
+// Fix fullscreen button
+function fixFullscreenButton() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (!fullscreenBtn) return;
+    
+    // Clone to remove existing listeners
+    const newFullscreenBtn = fullscreenBtn.cloneNode(true);
+    fullscreenBtn.parentNode.replaceChild(newFullscreenBtn, fullscreenBtn);
+    
+    // Add fresh event listener
+    newFullscreenBtn.addEventListener('click', () => {
+        const appElement = document.getElementById('braille-writer-app');
+        
+        try {
+            if (!document.fullscreenElement) {
+                appElement.requestFullscreen().then(() => {
+                    isFullscreen = true;
+                    newFullscreenBtn.classList.add('active');
+                    newFullscreenBtn.textContent = "Exit Full";
+                    appElement.classList.add('fullscreen-mode');
+                    document.body.classList.add('fullscreen-active');
+                }).catch(err => {
+                    console.error("Fullscreen request failed:", err);
+                });
+            } else {
+                document.exitFullscreen().then(() => {
+                    isFullscreen = false;
+                    newFullscreenBtn.classList.remove('active');
+                    newFullscreenBtn.textContent = "Full Screen";
+                    appElement.classList.remove('fullscreen-mode');
+                    document.body.classList.remove('fullscreen-active');
+                }).catch(err => {
+                    console.error("Exit fullscreen failed:", err);
+                });
+            }
+        } catch (e) {
+            console.error("Fullscreen toggle failed:", e);
+        }
+    });
+}
+
+// Execute this fix immediately
+fixCarriageLever();
+
+// ADD THIS AT THE VERY END OF YOUR FILE:
+
+// Simple fix for cursor/slider synchronization
+function synchronizeCarriageLever() {
+    console.log("FIXING CARRIAGE LEVER SYNCHRONIZATION");
+    
+    // Override the moveCursor function to always update slider
+    const originalMoveCursor = moveCursor;
+    moveCursor = function(rowDelta, colDelta, rotate = false) {
+        // Call the original function
+        originalMoveCursor(rowDelta, colDelta, rotate);
+        
+        // Explicitly update slider with fresh reference
+        const currentSlider = document.getElementById('slider');
+        if (currentSlider) {
+            currentSlider.value = cursor.col;
+        }
+    };
+    
+    // Override handleKeyUp to ensure slider syncs when typing
+    const originalHandleKeyUp = handleKeyUp;
+    handleKeyUp = function(e) {
+        // Call the original function
+        originalHandleKeyUp(e);
+        
+        // Explicitly update slider with fresh reference
+        const currentSlider = document.getElementById('slider');
+        if (currentSlider) {
+            currentSlider.value = cursor.col;
+        }
+    };
+    
+    // Make sure the slider is initially set correctly
+    const currentSlider = document.getElementById('slider');
+    if (currentSlider) {
+        currentSlider.value = cursor.col;
+    }
+    
+    console.log("✓ Carriage lever synchronization fixed!");
+}
+
+// Call this function to apply the fix
+synchronizeCarriageLever();
+
+// ADD THIS AT THE VERY END OF YOUR FILE:
+
+// Fix for slider animation
+function fixSliderAnimation() {
+    console.log("Fixing slider animation...");
+    
+    // Replace the rotateSlider function to always use fresh reference
+    window.rotateSlider = function() {
+        clearTimeout(sliderTimeout);
+        
+        // Always get a fresh reference to the slider
+        const currentSlider = document.getElementById('slider');
+        if (!currentSlider) return;
+        
+        // Add the rotation class
+        currentSlider.classList.add('rotated');
+        
+        // Set timeout to remove it
+        sliderTimeout = setTimeout(() => {
+            // Get fresh reference again when removing class
+            const updatedSlider = document.getElementById('slider');
+            if (updatedSlider) {
+                updatedSlider.classList.remove('rotated');
+            }
+        }, 1000);
+        
+        console.log("Slider rotation animation applied");
+    };
+    
+    // Make sure CSS for slider rotation works properly
+    const styleCheck = document.createElement('style');
+    styleCheck.textContent = `
+        .slider.rotated::-webkit-slider-thumb {
+            transform: rotate(20deg);
+            transition: transform 0.2s ease-out;
+        }
+        
+        .slider.rotated::-moz-range-thumb {
+            transform: rotate(20deg);
+            transition: transform 0.2s ease-out;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            transition: transform 0.2s ease-in;
+        }
+        
+        .slider::-moz-range-thumb {
+            transition: transform 0.2s ease-in;
+        }
+    `;
+    document.head.appendChild(styleCheck);
+    
+    console.log("✓ Slider animation fixed!");
+}
+
+// Call the fix
+fixSliderAnimation();
