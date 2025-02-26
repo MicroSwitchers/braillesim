@@ -335,41 +335,64 @@ function handleMouseDown(e) {
 document.addEventListener('mousedown', handleMouseDown);
 document.addEventListener('mouseup', handleMouseUp);
 
-// Replace your existing erase mode button handler with this improved version
+// REPLACE this entire section around line 349:
 
-eraseModeBtn.addEventListener('click', () => {
+// First, remove ALL event listeners from the erase mode button
+function setupEraseModeButton() {
+    // Use the existing button reference from earlier in the code
+    // Don't create a new variable
+    const newBtn = eraseModeBtn.cloneNode(true);
+    eraseModeBtn.parentNode.replaceChild(newBtn, eraseModeBtn);
+    
+    // Update our reference to point to the new button
+    // This avoids the duplicate variable declaration
+    Object.keys(buttonKeyMap).forEach(key => {
+        if (buttonKeyMap[key] === eraseModeBtn) {
+            buttonKeyMap[key] = newBtn;
+        }
+    });
+    
+    // Add fresh click handler for mouse
+    newBtn.addEventListener('click', () => {
+        toggleEraseMode(newBtn);
+    });
+
+    // Add dedicated touch handlers
+    newBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Visual feedback
+        newBtn.classList.add('touch-active');
+    }, { passive: false });
+
+    newBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Remove touch feedback
+        newBtn.classList.remove('touch-active');
+        // Toggle erase mode
+        toggleEraseMode(newBtn);
+    }, { passive: false });
+}
+
+// Centralized function to toggle erase mode
+function toggleEraseMode(btn = eraseModeBtn) {
     isEraseMode = !isEraseMode;
     
-    // Toggle the active class on the button
-    eraseModeBtn.classList.toggle('active', isEraseMode);
-    
-    // Toggle the erase-mode class on the braille grid
+    // Update visual state
+    btn.classList.toggle('active', isEraseMode);
     brailleGrid.classList.toggle('erase-mode', isEraseMode);
     
-    // Change cursor to indicate eraser mode
-    if (isEraseMode) {
-        brailleGrid.style.cursor = 'crosshair';
-        
-        // Announce for accessibility
-        const announcement = document.createElement('div');
-        announcement.setAttribute('aria-live', 'polite');
-        announcement.textContent = 'Erase mode enabled. Tap on raised dots to erase them.';
-        announcement.style.position = 'absolute';
-        announcement.style.clip = 'rect(0,0,0,0)';
-        document.body.appendChild(announcement);
-        
-        // Remove after announcement
-        setTimeout(() => document.body.removeChild(announcement), 3000);
-        
-    } else {
-        brailleGrid.style.cursor = 'default';
-    }
+    // Change cursor
+    brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
     
-    // Force redraw for mobile browsers to show the active state correctly
-    eraseModeBtn.style.display = 'none';
-    eraseModeBtn.offsetHeight; // Force reflow
-    eraseModeBtn.style.display = '';
-});
+    // Force redraw for mobile browsers
+    btn.style.display = 'none';
+    btn.offsetHeight; // Force reflow
+    btn.style.display = '';
+    
+    console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'}`);
+}
 
 // Replace the renderBrailleGrid function with this optimized version
 
@@ -869,60 +892,38 @@ function updateDotState(row, col, dotIndex, isActive) {
 
 // Replace your existing setupTouchHandlers function with this one
 
+// REPLACE the setupTouchHandlers function with this version
+
 function setupTouchHandlers() {
-    // Add touch support to all small buttons in the header
-    const smallButtons = document.querySelectorAll('.small-button');
+    // Add touch support to small buttons EXCEPT erase mode which is handled separately
+    const smallButtons = document.querySelectorAll('.small-button:not(#erase-mode-btn)');
     smallButtons.forEach(button => {
-        button.addEventListener('touchstart', (e) => {
+        // First clean up any existing handlers to prevent duplication
+        const newButton = button.cloneNode(true);
+        button.parentNode.replaceChild(newButton, button);
+        
+        // Add new handlers
+        newButton.addEventListener('touchstart', (e) => {
             e.preventDefault();
             // Visual feedback
-            button.classList.add('active');
+            newButton.classList.add('active');
             // Trigger the click event
-            setTimeout(() => button.click(), 0);
+            setTimeout(() => newButton.click(), 10);
         }, { passive: false });
         
-        button.addEventListener('touchend', (e) => {
+        newButton.addEventListener('touchend', (e) => {
             e.preventDefault();
             
-            // Special handling for toggle buttons like erase-mode-btn
-            // Don't remove active class if it's a toggle button that's currently active
-            if (button.id === 'erase-mode-btn' && isEraseMode) {
-                // Keep the active class for erase mode button when enabled
+            // Special handling for fullscreen button
+            if (newButton.id === 'fullscreen-btn' && isFullscreen) {
+                // Keep the active class when enabled
                 return;
             }
             
-            if (button.id === 'fullscreen-btn' && isFullscreen) {
-                // Keep the active class for fullscreen button when enabled
-                return;
-            }
-            
-            // For all other buttons, remove the active class
-            button.classList.remove('active');
-        }, { passive: false });
-        
-        button.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            // Apply same logic as touchend for consistency
-            if ((button.id === 'erase-mode-btn' && isEraseMode) || 
-                (button.id === 'fullscreen-btn' && isFullscreen)) {
-                return;
-            }
-            button.classList.remove('active');
+            // For other buttons, remove the active class
+            newButton.classList.remove('active');
         }, { passive: false });
     });
-    
-    // Add touch support for instructions drawer toggle
-    const instructionsToggle = document.getElementById('instructions-toggle');
-    instructionsToggle.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-        instructionsToggle.classList.add('active');
-        setTimeout(() => instructionsToggle.click(), 0);
-    }, { passive: false });
-    
-    instructionsToggle.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        instructionsToggle.classList.remove('active');
-    }, { passive: false });
 }
 
 // Initialize the app with a single call to each setup function
@@ -959,7 +960,7 @@ function initApp() {
         button.addEventListener('mousedown', (e) => e.preventDefault());
     });
     
-    // Special handling for slider
+    // Special handling for slider to maintain functionality
     slider.addEventListener('mousedown', () => {
         setTimeout(() => appContainer.focus(), 10);
     });
@@ -1061,3 +1062,269 @@ document.addEventListener('fullscreenchange', () => {
         document.body.classList.remove('fullscreen-active');
     }
 });
+
+// REPLACE the initApp function and initialization code at the end of your file
+
+// IMPORTANT: Remove any duplicate calls to setupTouchHandlers and setupFocusManagement
+// Delete these lines wherever they appear elsewhere in the file:
+// setupTouchHandlers();
+// setupFocusManagement();
+
+// Single initialization function - call this only ONCE at the end of your file
+function initializeApp() {
+    // Initial values
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Setup focus management
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Setup the instructions drawer
+    setupInstructionsDrawer();
+    
+    // Setup touch handlers for everything except erase button
+    setupTouchHandlers();
+    
+    console.log("App initialization completed");
+}
+
+// Call this ONCE at the very end of your file
+// Remove other calls to initialization functions
+initializeApp();
+
+// Clean up on page unload
+window.addEventListener('beforeunload', (e) => {
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+    
+    // Check if there's any data that would be lost
+    const hasContent = grid.some(row => 
+        row.some(cell => cell.some(dot => dot === 1))
+    );
+    
+    if (hasContent) {
+        const message = "You have unsaved braille text. If you leave now, your work will be lost.";
+        e.returnValue = message;
+        return message;
+    }
+});
+
+// Cleanup function to remove duplicate initialization
+function cleanup() {
+    // Clear any existing intervals and timeouts
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+    
+    // Remove duplicate event listeners from key elements
+    const keysToClean = ['instructions-toggle', 'slider'];
+    keysToClean.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            const clone = el.cloneNode(true);
+            el.parentNode.replaceChild(clone, el);
+        }
+    });
+}
+
+// Single initialization function that calls everything in the correct order
+function initialize() {
+    cleanup();
+    
+    // Setup core UI
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Setup keyboard focus management
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Setup erase button (needs special handling)
+    setupEraseModeButton();
+    
+    // Setup touch handlers for everything except erase button
+    setupTouchHandlers();
+    
+    // Setup drawer last
+    setupInstructionsDrawer();
+    
+    console.log("App initialization completed successfully!");
+}
+
+// Call this ONCE - this is the ONLY initialization call in the file
+initialize();
+
+// Add this at the END of your script.js file, REPLACING all other initialization functions
+
+// Cleanup and remove ALL existing handlers - vital to fix conflicts
+function cleanupDuplicateHandlers() {
+    console.log("Cleaning up duplicate handlers...");
+    // Clear all intervals and timeouts
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+    
+    // Clean up ALL button handlers by cloning them
+    const buttonIds = [
+        'all-clear-btn', 
+        'erase-mode-btn',
+        'fullscreen-btn',
+        'instructions-toggle'
+    ];
+    
+    buttonIds.forEach(id => {
+        const button = document.getElementById(id);
+        if (button) {
+            // Replace with clone to remove ALL event handlers
+            const clone = button.cloneNode(true);
+            if (button.parentNode) {
+                button.parentNode.replaceChild(clone, button);
+            }
+        }
+    });
+    
+    // Remove any existing fullscreen event handlers
+    document.removeEventListener('fullscreenchange', () => {});
+}
+
+// Master initialization function - THE ONLY ONE
+function masterInitialize() {
+    // First clean up any existing handlers to start fresh
+    cleanupDuplicateHandlers();
+    
+    // Basic UI initialization
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Focus management setup
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Set up special buttons with proper toggle states
+    setupToggleButtons();
+    
+    // Register fullscreen handler
+    setupFullscreenHandler();
+    
+    // Set up drawer AFTER cleaning up handlers
+    setupInstructionsDrawer();
+    
+    console.log("Master initialization completed successfully!");
+}
+
+// Function to set up all toggle buttons correctly
+function setupToggleButtons() {
+    // Get fresh references to buttons after cleanup
+    const eraseModeBtn = document.getElementById('erase-mode-btn');
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    
+    // ERASE MODE BUTTON
+    eraseModeBtn.addEventListener('click', () => {
+        // Toggle state
+        isEraseMode = !isEraseMode;
+        
+        // Update visual appearance
+        eraseModeBtn.classList.toggle('active', isEraseMode);
+        brailleGrid.classList.toggle('erase-mode', isEraseMode);
+        
+        // Update cursor for visual feedback
+        brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
+        
+        console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'}`);
+    });
+    
+    // Touch support for erase mode button
+    eraseModeBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    eraseModeBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Toggle state
+        isEraseMode = !isEraseMode;
+        
+        // Update visual appearance
+        eraseModeBtn.classList.toggle('active', isEraseMode);
+        brailleGrid.classList.toggle('erase-mode', isEraseMode);
+        
+        // Update cursor for visual feedback
+        brailleGrid.style.cursor = isEraseMode ? 'crosshair' : 'default';
+        
+        console.log(`Erase mode ${isEraseMode ? 'enabled' : 'disabled'} (touch)`);
+    }, { passive: false });
+}
+
+// Setup fullscreen handler
+function setupFullscreenHandler() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    const appElement = document.getElementById('braille-writer-app');
+    
+    fullscreenBtn.addEventListener('click', () => {
+        try {
+            if (!document.fullscreenElement) {
+                // Enter fullscreen
+                appElement.requestFullscreen().then(() => {
+                    isFullscreen = true;
+                    fullscreenBtn.classList.add('active');
+                    fullscreenBtn.textContent = "Exit Full";
+                    
+                    // Apply fullscreen styles
+                    appElement.classList.add('fullscreen-mode');
+                    document.body.classList.add('fullscreen-active');
+                }).catch(err => {
+                    console.error(`Fullscreen error: ${err.message}`);
+                });
+            } else {
+                // Exit fullscreen
+                document.exitFullscreen().then(() => {
+                    isFullscreen = false;
+                    fullscreenBtn.classList.remove('active');
+                    fullscreenBtn.textContent = "Full Screen";
+                    
+                    // Remove fullscreen styles
+                    appElement.classList.remove('fullscreen-mode');
+                    document.body.classList.remove('fullscreen-active');
+                }).catch(err => {
+                    console.error(`Exit fullscreen error: ${err.message}`);
+                });
+            }
+        } catch (e) {
+            console.error("Fullscreen toggle failed:", e);
+        }
+    });
+    
+    // Fullscreen change handler
+    document.addEventListener('fullscreenchange', () => {
+        if (!document.fullscreenElement && isFullscreen) {
+            isFullscreen = false;
+            fullscreenBtn.classList.remove('active');
+            fullscreenBtn.textContent = "Full Screen";
+            
+            appElement.classList.remove('fullscreen-mode');
+            document.body.classList.remove('fullscreen-active');
+        }
+    });
+    
+    // Touch support for fullscreen button
+    fullscreenBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+    }, { passive: false });
+    
+    fullscreenBtn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        fullscreenBtn.click();
+    }, { passive: false });
+}
+
+// CALL ONLY THIS FUNCTION ONCE - DELETE ALL OTHER initialization calls
+masterInitialize();
