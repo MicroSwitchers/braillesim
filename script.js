@@ -25,6 +25,7 @@ let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
 let isKeySoundEnabled = true;
+let isProcessingMultiKeys = false; // New flag to track multi-key processing
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -244,33 +245,37 @@ function handleKeyDown(e) {
     }
 }
 
-// FIXED: Updated handleKeyUp function 
+// FIXED: Updated handleKeyUp function to prevent multiple cursor movements
 function handleKeyUp(e) {
+    // Skip if we're currently processing multiple keys
+    if (isProcessingMultiKeys) return;
+    
     const key = e.key.toLowerCase();
     const action = keyMap[key];
 
     if (action !== undefined) {
         activeKeys.delete(key);
         clearInterval(movementInterval);
-
-        if (activeKeys.size === 0) {
-            if (dotKeys.has(key) || spaceKeys.has(key)) {
-                // Move cursor forward after entering a dot or space
-                moveCursor(0, 1, true); // Added third parameter as 'true' to rotate the slider
-                
-                // Play sound if key sound is enabled
-                if (isKeySoundEnabled) {
-                    playSoundSafely(keySound);
-                }
-            } else if (!movementKeys.has(key)) { // Prevent cursor movement on arrow key release
-                handleAction(action);
-            }
-        }
         
         // Remove visual feedback for button release
         const button = buttonKeyMap[key];
         if (button) {
             button.classList.remove('active');
+        }
+
+        // Only move cursor if no more keys are pressed
+        if (activeKeys.size === 0) {
+            if (dotKeys.has(key) || spaceKeys.has(key)) {
+                // Move cursor forward after entering a dot or space
+                moveCursor(0, 1, true);
+                
+                // Play sound if key sound is enabled
+                if (isKeySoundEnabled) {
+                    playSoundSafely(keySound);
+                }
+            } else if (!movementKeys.has(key)) {
+                handleAction(action);
+            }
         }
     }
 }
@@ -541,21 +546,46 @@ function handleDotButtonClick(dotIndex) {
     }
 }
 
-// FIXED: Updated handleDotButtonRelease function
+// FIXED: Completely redesigned handleDotButtonRelease to properly handle multi-key input
 function handleDotButtonRelease() {
     if (activeKeys.size > 0) {
+        // Set flag to prevent individual key processing
+        isProcessingMultiKeys = true;
+        
         // Store all keys that need to be released
         const keysToRelease = Array.from(activeKeys);
         
-        // Clear the activeKeys set before dispatching events
-        // This prevents issues with cursor movement tracking
+        // Check if we have any dot keys in the active set
+        const hasDotOrSpaceKeys = keysToRelease.some(key => 
+            dotKeys.has(key) || spaceKeys.has(key)
+        );
+        
+        // Clear active keys immediately to prevent processing individual releases
         activeKeys.clear();
         
-        // Now dispatch keyup events for each key
+        // Remove visual feedback for all buttons
         keysToRelease.forEach(key => {
-            const keyupEvent = new KeyboardEvent('keyup', { key: key });
-            document.dispatchEvent(keyupEvent);
+            const button = buttonKeyMap[key];
+            if (button) {
+                button.classList.remove('active');
+            }
         });
+        
+        // Only move cursor once if dot keys or space keys were pressed
+        if (hasDotOrSpaceKeys) {
+            // Move cursor forward exactly once for the entire character
+            moveCursor(0, 1, true);
+            
+            // Play sound if key sound is enabled
+            if (isKeySoundEnabled) {
+                playSoundSafely(keySound);
+            }
+        }
+        
+        // Reset processing flag after a short delay to allow for cleanup
+        setTimeout(() => {
+            isProcessingMultiKeys = false;
+        }, 10);
     }
 }
 
@@ -639,30 +669,32 @@ dotButtons.forEach((btn, index) => {
     btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 });
 
-// Event listeners for other buttons
+// FIXED: Improved helper function to handle button clicks
+function handleButtonClick(key) {
+    // Clear any active keys to prevent unexpected behavior
+    activeKeys.clear();
+    
+    // Simulate key press and release in sequence
+    const keydownEvent = new KeyboardEvent('keydown', { key: key });
+    document.dispatchEvent(keydownEvent);
+    
+    // Give a slight delay to simulate real key press
+    setTimeout(() => {
+        const keyupEvent = new KeyboardEvent('keyup', { key: key });
+        document.dispatchEvent(keyupEvent);
+    }, 10);
+}
+
+// Event listeners for other buttons with improved handling
+spaceBtn.addEventListener('click', () => handleButtonClick('g'));
+linespaceBtn.addEventListener('click', () => handleButtonClick('a'));
+backspaceBtn.addEventListener('click', () => handleButtonClick(';'));
+
+// Event listeners for touch events
 [spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
     btn.addEventListener('touchstart', handleTouchStart, { passive: false });
     btn.addEventListener('touchend', handleTouchEnd, { passive: false });
     btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
-});
-
-spaceBtn.addEventListener('click', () => {
-    const keydownEvent = new KeyboardEvent('keydown', { key: 'g' });
-    const keyupEvent = new KeyboardEvent('keyup', { key: 'g' });
-    document.dispatchEvent(keydownEvent);
-    document.dispatchEvent(keyupEvent);
-});
-linespaceBtn.addEventListener('click', () => {
-    const keydownEvent = new KeyboardEvent('keydown', { key: 'a' });
-    const keyupEvent = new KeyboardEvent('keyup', { key: 'a' });
-    document.dispatchEvent(keydownEvent);
-    document.dispatchEvent(keyupEvent);
-});
-backspaceBtn.addEventListener('click', () => {
-    const keydownEvent = new KeyboardEvent('keydown', { key: ';' });
-    const keyupEvent = new KeyboardEvent('keyup', { key: ';' });
-    document.dispatchEvent(keydownEvent);
-    document.dispatchEvent(keyupEvent);
 });
 
 // Simple drawer toggle function - cleaner approach with no duplicates
