@@ -217,6 +217,8 @@ body {
     gap: 3px; /* Reduced from 4px */
     width: 100%;
     height: 100%;
+    justify-items: center;
+    align-items: center;
 }
 
 /* Ensure consistent braille dot sizing */
@@ -230,6 +232,8 @@ body {
     border-radius: 50%;
     box-sizing: border-box; /* Include border in element size */
     border: 1px solid transparent; /* Same border width for both states */
+    margin: 0;
+    padding: 0;
 }
 
 .braille-dot-active {
@@ -873,5 +877,12 @@ input[type="checkbox"] {
             height: calc(100vh - 54px);
             max-height: calc(100vh - 54px);
         }
+    }
+}
+
+/* Fix visual spacing between dots */
+@media (max-width: 768px) {
+    .braille-dot-container {
+        gap: 2px;
     }
 }

@@ -353,90 +353,104 @@ eraseModeBtn.addEventListener('click', () => {
 
 // Replace the renderBrailleGrid function with this optimized version
 
+// REPLACE the entire renderBrailleGrid function with this truly optimized version:
 function renderBrailleGrid() {
-    // Store references to existing dot elements to avoid recreation
-    const dotElements = new Map();
-    
-    // First pass: collect all existing dot elements by their coordinates
-    const existingRows = brailleGrid.querySelectorAll('.braille-row');
-    existingRows.forEach((row, rowIdx) => {
-        const cells = row.querySelectorAll('.braille-cell');
-        cells.forEach((cell, colIdx) => {
-            const container = cell.querySelector('.braille-dot-container');
-            if (container) {
-                const dots = container.querySelectorAll('.braille-dot');
-                dots.forEach((dot, dotIdx) => {
-                    const key = `${rowIdx}-${colIdx}-${dotIdx}`;
-                    dotElements.set(key, dot);
-                });
+    // Only create the grid initially if it doesn't exist
+    if (brailleGrid.childElementCount === 0) {
+        // First-time grid creation
+        for (let i = 0; i < ROWS; i++) {
+            const rowElement = document.createElement('div');
+            rowElement.className = 'braille-row';
+            
+            for (let j = 0; j < COLS; j++) {
+                const cellElement = document.createElement('div');
+                cellElement.className = 'braille-cell';
+                
+                const dotContainer = document.createElement('div');
+                dotContainer.className = 'braille-dot-container';
+                
+                // Visual order mapping for dots
+                const visualOrder = [0, 3, 1, 4, 2, 5];
+                
+                for (let k = 0; k < 6; k++) {
+                    const dotElement = document.createElement('div');
+                    dotElement.className = 'braille-dot braille-dot-inactive';
+                    
+                    // Add data attributes for event delegation
+                    dotElement.dataset.row = i;
+                    dotElement.dataset.col = j;
+                    dotElement.dataset.dotIndex = visualOrder[k];
+                    
+                    dotContainer.appendChild(dotElement);
+                }
+                
+                cellElement.appendChild(dotContainer);
+                rowElement.appendChild(cellElement);
             }
+            
+            brailleGrid.appendChild(rowElement);
+        }
+        
+        // Use event delegation instead of individual listeners
+        brailleGrid.addEventListener('mousedown', (e) => {
+            const dot = e.target.closest('.braille-dot');
+            if (!dot || !isEraseMode) return;
+            
+            const row = parseInt(dot.dataset.row);
+            const col = parseInt(dot.dataset.col);
+            const dotIndex = parseInt(dot.dataset.dotIndex);
+            
+            eraseDot(row, col, dotIndex);
         });
-    });
+        
+        brailleGrid.addEventListener('mouseenter', (e) => {
+            const dot = e.target.closest('.braille-dot');
+            if (!dot || !isEraseMode || !isMouseDown) return;
+            
+            const row = parseInt(dot.dataset.row);
+            const col = parseInt(dot.dataset.col);
+            const dotIndex = parseInt(dot.dataset.dotIndex);
+            
+            eraseDot(row, col, dotIndex);
+        }, true); // Use capture phase for better detection
+    }
     
-    // Clear the current grid
-    brailleGrid.innerHTML = '';
+    // Update only what needs to change - cell classes and dot states
+    const rows = brailleGrid.children;
     
-    // Now build the grid with optimal DOM operations
     for (let i = 0; i < ROWS; i++) {
-        const rowElement = document.createElement('div');
-        rowElement.className = 'braille-row';
+        const row = rows[i];
+        const cells = row.children;
         
         for (let j = 0; j < COLS; j++) {
-            const cellElement = document.createElement('div');
+            const cell = cells[j];
             const isCurrentCell = (i === cursor.row && j === cursor.col);
-            cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
             
-            const dotContainer = document.createElement('div');
-            dotContainer.className = 'braille-dot-container';
+            // Only update cell class if needed
+            if (isCurrentCell && !cell.classList.contains('current-cell')) {
+                cell.classList.add('current-cell');
+            } else if (!isCurrentCell && cell.classList.contains('current-cell')) {
+                cell.classList.remove('current-cell');
+            }
             
-            // Visual order mapping: 1,4,2,5,3,6 corresponds to indices 0,3,1,4,2,5
+            // Update dot states
+            const dotContainer = cell.firstChild;
+            const dots = dotContainer.children;
             const visualOrder = [0, 3, 1, 4, 2, 5];
             
             for (let k = 0; k < 6; k++) {
+                const dot = dots[k];
                 const dotIndex = visualOrder[k];
                 const isActive = grid[i][j][dotIndex] === 1;
                 
-                // Try to reuse existing dot element
-                const key = `${i}-${j}-${k}`;
-                let dotElement;
-                
-                if (dotElements.has(key)) {
-                    // Reuse existing element
-                    dotElement = dotElements.get(key);
-                    // Update class without recreating the element
-                    dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-                } else {
-                    // Create new element if needed
-                    dotElement = document.createElement('div');
-                    dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-                    
-                    // Add data attributes
-                    dotElement.dataset.row = i;
-                    dotElement.dataset.col = j;
-                    dotElement.dataset.dotIndex = dotIndex;
-                    
-                    // Add event listeners once
-                    dotElement.addEventListener('mousedown', (e) => {
-                        if (isEraseMode) {
-                            eraseDot(i, j, dotIndex);
-                        }
-                    });
-                    
-                    dotElement.addEventListener('mouseenter', (e) => {
-                        if (isEraseMode && isMouseDown) {
-                            eraseDot(i, j, dotIndex);
-                        }
-                    });
+                // Only update dot class if needed
+                if (isActive && !dot.classList.contains('braille-dot-active')) {
+                    dot.className = 'braille-dot braille-dot-active';
+                } else if (!isActive && dot.classList.contains('braille-dot-active')) {
+                    dot.className = 'braille-dot braille-dot-inactive';
                 }
-                
-                dotContainer.appendChild(dotElement);
             }
-            
-            cellElement.appendChild(dotContainer);
-            rowElement.appendChild(cellElement);
         }
-        
-        brailleGrid.appendChild(rowElement);
     }
     
     // Scroll to make cursor visible - use requestAnimationFrame for smoother scrolling
@@ -444,7 +458,7 @@ function renderBrailleGrid() {
         const currentCell = document.querySelector('.current-cell');
         if (currentCell) {
             currentCell.scrollIntoView({
-                behavior: 'auto', // Changed from smooth for better performance
+                behavior: 'auto', // Using auto instead of smooth for better performance
                 block: 'nearest',
                 inline: 'center'
             });
@@ -589,30 +603,33 @@ fullscreenBtn.addEventListener('click', () => {
         const appElement = document.getElementById('braille-writer-app');
         
         if (!document.fullscreenElement) {
-            // Enter fullscreen - use the app container instead of documentElement
+            // Pre-apply some styles to prevent black screen
+            document.body.classList.add('fullscreen-pending');
+            
             appElement.requestFullscreen().then(() => {
                 isFullscreen = true;
                 fullscreenBtn.classList.add('active');
                 fullscreenBtn.textContent = "Exit Full";
                 
-                // Apply fullscreen-specific styling
+                // Apply fullscreen styles
                 appElement.classList.add('fullscreen-mode');
                 document.body.classList.add('fullscreen-active');
+                document.body.classList.remove('fullscreen-pending');
             }).catch(err => {
-                console.error(`Fullscreen error: ${err.message} (${err.name})`);
+                document.body.classList.remove('fullscreen-pending');
+                console.error(`Fullscreen error: ${err.message}`);
             });
         } else {
-            // Exit fullscreen
             document.exitFullscreen().then(() => {
                 isFullscreen = false;
                 fullscreenBtn.classList.remove('active');
                 fullscreenBtn.textContent = "Full Screen";
                 
-                // Remove fullscreen-specific styling
+                // Remove fullscreen styles
                 appElement.classList.remove('fullscreen-mode');
                 document.body.classList.remove('fullscreen-active');
             }).catch(err => {
-                console.error(`Exit fullscreen error: ${err.message} (${err.name})`);
+                console.error(`Exit fullscreen error: ${err.message}`);
             });
         }
     } catch (e) {
@@ -649,24 +666,6 @@ toggleBell.addEventListener('change', (e) => {
 toggleKeySound.addEventListener('change', (e) => {
     isKeySoundEnabled = e.target.checked;
 });
-
-function checkBellWarning() {
-    const warningPosition = COLS - bellWarningSpaces;
-    
-    // Debug log to verify position calculation
-    console.log(`Current pos: ${cursor.col}, Warning pos: ${warningPosition}, Bell spaces: ${bellWarningSpaces}`);
-    
-    if (isBellEnabled && cursor.col === warningPosition) {
-        // Always play bell when reaching warning position, regardless of previous position
-        playSoundSafely(dingSound);
-        previousBellWarningPosition = cursor.col;
-    }
-    
-    // Reset previous warning position when moving away from warning position
-    if (cursor.col !== warningPosition) {
-        previousBellWarningPosition = -1;
-    }
-}
 
 // Play key sound
 function playKeySound() {
@@ -886,3 +885,76 @@ updateCellCount();
 renderBrailleGrid();
 setupFocusManagement(); // Call this once only
 setupTouchHandlers(); // Call this once only
+
+// Initialize the app (single initialization block at the end)
+function initApp() {
+    // Initial values
+    slider.value = cursor.col;
+    updateCellCount();
+    renderBrailleGrid();
+    
+    // Set up focus management (once)
+    const appContainer = document.getElementById('braille-writer-app');
+    appContainer.setAttribute('tabindex', '0');
+    appContainer.focus();
+    
+    // Set up focus event handlers
+    appContainer.addEventListener('click', () => appContainer.focus());
+    appContainer.addEventListener('mousedown', () => appContainer.focus());
+    appContainer.addEventListener('touchstart', () => appContainer.focus());
+    
+    // Prevent Tab key from moving focus out
+    appContainer.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab') e.preventDefault();
+    });
+    
+    // Prevent buttons from stealing focus
+    document.querySelectorAll('.key, .small-button').forEach(button => {
+        button.addEventListener('mousedown', (e) => e.preventDefault());
+    });
+    
+    // Special handling for slider
+    slider.addEventListener('mousedown', () => {
+        setTimeout(() => appContainer.focus(), 10);
+    });
+    
+    // Set up touch handlers for all buttons
+    const smallButtons = document.querySelectorAll('.small-button');
+    smallButtons.forEach(button => {
+        button.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            button.classList.add('active');
+            setTimeout(() => button.click(), 0);
+        }, { passive: false });
+        
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            button.classList.remove('active');
+        }, { passive: false });
+    });
+    
+    // Prevent double-tap zoom on iOS
+    document.addEventListener('touchend', (e) => {
+        e.preventDefault();
+    }, { passive: false });
+}
+
+// Call initialization once
+initApp();
+
+// Clean up on page unload
+window.addEventListener('beforeunload', (e) => {
+    clearInterval(movementInterval);
+    clearTimeout(sliderTimeout);
+    
+    // Check if there's any data that would be lost
+    const hasContent = grid.some(row => 
+        row.some(cell => cell.some(dot => dot === 1))
+    );
+    
+    if (hasContent) {
+        const message = "You have unsaved braille text. If you leave now, your work will be lost.";
+        e.returnValue = message;
+        return message;
+    }
+});
