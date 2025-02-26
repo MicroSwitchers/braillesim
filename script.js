@@ -1899,3 +1899,103 @@ function fixSliderAnimation() {
 
 // Call the fix
 fixSliderAnimation();
+
+// ADD THIS AT THE VERY END OF YOUR FILE:
+
+// Fix for touch screen slider functionality
+function fixTouchScreenSlider() {
+    console.log("Fixing touch screen slider functionality...");
+    
+    // Get fresh reference to slider
+    const slider = document.getElementById('slider');
+    if (!slider) return;
+    
+    // Add touch-specific event handlers
+    slider.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Prevent scrolling
+        
+        // Calculate the touch position relative to the slider
+        const rect = slider.getBoundingClientRect();
+        const touchX = e.touches[0].clientX - rect.left;
+        const sliderWidth = rect.width;
+        
+        // Convert position to value
+        const max = parseInt(slider.max);
+        let value = Math.round((touchX / sliderWidth) * max);
+        value = Math.max(0, Math.min(value, max)); // Clamp value
+        
+        // Set slider value and cursor position
+        slider.value = value;
+        cursor.col = value;
+        
+        // Update UI
+        updateCellCount();
+        renderBrailleGrid();
+        rotateSlider();
+        checkBellWarning();
+        
+        console.log("Touch start on slider, position:", value);
+    }, { passive: false });
+    
+    slider.addEventListener('touchmove', (e) => {
+        e.preventDefault(); // Prevent scrolling
+        
+        // Calculate the touch position relative to the slider
+        const rect = slider.getBoundingClientRect();
+        const touchX = e.touches[0].clientX - rect.left;
+        const sliderWidth = rect.width;
+        
+        // Convert position to value
+        const max = parseInt(slider.max);
+        let value = Math.round((touchX / sliderWidth) * max);
+        value = Math.max(0, Math.min(value, max)); // Clamp value
+        
+        // Set slider value and cursor position
+        slider.value = value;
+        cursor.col = value;
+        
+        // Update UI
+        updateCellCount();
+        renderBrailleGrid();
+        
+        console.log("Touch move on slider, position:", value);
+    }, { passive: false });
+    
+    // Also ensure slider syncs when typing on touch screens
+    const originalInputHandler = handleDotButtonClick;
+    handleDotButtonClick = function(dotIndex) {
+        originalInputHandler(dotIndex);
+        
+        // Update slider after processing input
+        const currentSlider = document.getElementById('slider');
+        if (currentSlider) {
+            currentSlider.value = cursor.col;
+        }
+    };
+    
+    console.log("✓ Touch screen slider functionality fixed!");
+}
+
+// Call this function to fix touch screen slider functionality
+fixTouchScreenSlider();
+
+// Ensure all touch handlers are passive: false to prevent scrolling
+function fixTouchDefaultBehaviors() {
+    const touchElements = [
+        document.getElementById('slider'),
+        document.getElementById('braille-grid'),
+        ...document.querySelectorAll('.key'),
+        ...document.querySelectorAll('.small-button')
+    ];
+    
+    touchElements.forEach(element => {
+        if (element) {
+            element.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+            element.addEventListener('touchmove', e => e.preventDefault(), { passive: false });
+        }
+    });
+    
+    console.log("Touch default behaviors fixed");
+}
+
+fixTouchDefaultBehaviors();
