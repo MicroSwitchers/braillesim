@@ -159,7 +159,7 @@ body {
         height: 40px;
     }
     .dot-key {
-        width: 70px;
+        width: 95px; /* Increased from 85px */
         height: 80px;
     }
     .small-button {
@@ -168,6 +168,48 @@ body {
     }
     .instructions-content {
         max-height: 250px;
+    }
+    .slider-container {
+        padding: 8px 25px 8px 15px; /* Adjusted for mobile */
+    }
+    
+    .cell-count {
+        right: 25px; /* Matching right padding for mobile */
+    }
+    
+    /* May need to adjust container on very small screens */
+    @media (max-width: 380px) {
+        .key-container {
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 6px;
+        }
+    }
+    /* Always allow wrapping on mobile for better fit */
+    .key-container {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 6px;
+        padding: 14px 2px; /* Further reduced horizontal padding */
+    }
+}
+
+/* Make medium screen sizes much wider */
+@media (min-width: 641px) and (max-width: 800px) {
+    .key.dot-key {
+        width: 85px; /* Increased from 72px */
+        height: 85px;
+    }
+    
+    /* Adjust space key to maintain balance */
+    .space-key {
+        width: 110px; /* Increased from 100px */
+    }
+    
+    /* Adjust container spacing */
+    .key-container {
+        gap: 3px;
+        padding: 14px 4px; /* Reduced horizontal padding */
     }
 }
 
@@ -382,6 +424,21 @@ body {
     border: 1px solid #2a2a2a;
     width: 100%;
     box-sizing: border-box;
+}
+
+/* Standard size dot keys - make desktop keys slightly wider */
+.key.dot-key {
+    width: 80px; /* Increased from 75px */
+    height: 90px;
+    border-top-left-radius: 30px;
+    border-top-right-radius: 30px;
+    border-bottom-left-radius: 50px;
+    border-bottom-right-radius: 50px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 2px;
 }
 
 .key {
@@ -896,5 +953,23 @@ input[type="checkbox"] {
 @media (max-width: 768px) {
     .braille-dot-container {
         gap: 2px;
+    }
+}
+
+/* Add special handling for narrow screens */
+@media (max-width: 480px) {
+    .dot-key {
+        width: 90px; /* Slightly reduced for very small screens */
+        margin: 1px;
+    }
+    
+    .key-container {
+        gap: 4px;
+    }
+    
+    /* Make round keys smaller on tiny screens */
+    .round-key {
+        width: 36px;
+        height: 36px;
     }
 }
