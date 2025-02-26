@@ -354,94 +354,102 @@ eraseModeBtn.addEventListener('click', () => {
 // Replace the renderBrailleGrid function with this optimized version
 
 function renderBrailleGrid() {
-    // Don't recreate the entire grid on every update
-    // Only update what has changed
+    // Store references to existing dot elements to avoid recreation
+    const dotElements = new Map();
     
-    // First, ensure we have the right number of rows
-    while (brailleGrid.childElementCount < ROWS) {
+    // First pass: collect all existing dot elements by their coordinates
+    const existingRows = brailleGrid.querySelectorAll('.braille-row');
+    existingRows.forEach((row, rowIdx) => {
+        const cells = row.querySelectorAll('.braille-cell');
+        cells.forEach((cell, colIdx) => {
+            const container = cell.querySelector('.braille-dot-container');
+            if (container) {
+                const dots = container.querySelectorAll('.braille-dot');
+                dots.forEach((dot, dotIdx) => {
+                    const key = `${rowIdx}-${colIdx}-${dotIdx}`;
+                    dotElements.set(key, dot);
+                });
+            }
+        });
+    });
+    
+    // Clear the current grid
+    brailleGrid.innerHTML = '';
+    
+    // Now build the grid with optimal DOM operations
+    for (let i = 0; i < ROWS; i++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'braille-row';
-        brailleGrid.appendChild(rowElement);
-    }
-    
-    // Now update each cell in each row
-    for (let i = 0; i < ROWS; i++) {
-        const rowElement = brailleGrid.children[i];
         
-        // Make sure this row has the right number of cells
-        while (rowElement.childElementCount < COLS) {
+        for (let j = 0; j < COLS; j++) {
             const cellElement = document.createElement('div');
-            cellElement.className = 'braille-cell';
+            const isCurrentCell = (i === cursor.row && j === cursor.col);
+            cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
             
             const dotContainer = document.createElement('div');
             dotContainer.className = 'braille-dot-container';
             
-            // Create 6 dots in each cell
+            // Visual order mapping: 1,4,2,5,3,6 corresponds to indices 0,3,1,4,2,5
+            const visualOrder = [0, 3, 1, 4, 2, 5];
+            
             for (let k = 0; k < 6; k++) {
-                const dot = document.createElement('div');
-                dot.className = 'braille-dot braille-dot-inactive';
-                dot.dataset.dotIndex = k;
-                dotContainer.appendChild(dot);
+                const dotIndex = visualOrder[k];
+                const isActive = grid[i][j][dotIndex] === 1;
+                
+                // Try to reuse existing dot element
+                const key = `${i}-${j}-${k}`;
+                let dotElement;
+                
+                if (dotElements.has(key)) {
+                    // Reuse existing element
+                    dotElement = dotElements.get(key);
+                    // Update class without recreating the element
+                    dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+                } else {
+                    // Create new element if needed
+                    dotElement = document.createElement('div');
+                    dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+                    
+                    // Add data attributes
+                    dotElement.dataset.row = i;
+                    dotElement.dataset.col = j;
+                    dotElement.dataset.dotIndex = dotIndex;
+                    
+                    // Add event listeners once
+                    dotElement.addEventListener('mousedown', (e) => {
+                        if (isEraseMode) {
+                            eraseDot(i, j, dotIndex);
+                        }
+                    });
+                    
+                    dotElement.addEventListener('mouseenter', (e) => {
+                        if (isEraseMode && isMouseDown) {
+                            eraseDot(i, j, dotIndex);
+                        }
+                    });
+                }
+                
+                dotContainer.appendChild(dotElement);
             }
             
             cellElement.appendChild(dotContainer);
             rowElement.appendChild(cellElement);
         }
         
-        // Update each cell in this row
-        for (let j = 0; j < COLS; j++) {
-            const cellElement = rowElement.children[j];
-            const isCurrentCell = i === cursor.row && j === cursor.col;
-            
-            // Update cell class without recreating the element
-            cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
-            
-            // Update dot states
-            const dotContainer = cellElement.firstChild;
-            const visualOrder = [0, 3, 1, 4, 2, 5]; // Visual dot order
-            
-            for (let k = 0; k < 6; k++) {
-                const dotElement = dotContainer.children[k];
-                const dotIndex = visualOrder[k];
-                const isActive = grid[i][j][dotIndex] === 1;
-                
-                // Update dot appearance
-                dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-                
-                // Ensure dot has proper data attributes and event listeners
-                dotElement.dataset.row = i;
-                dotElement.dataset.col = j;
-                
-                // Clean up old listeners (using a common technique with cloneNode)
-                const newDot = dotElement.cloneNode(true);
-                
-                // Add event listeners for eraser tool
-                newDot.addEventListener('mousedown', (e) => {
-                    if (isEraseMode) {
-                        eraseDot(i, j, dotIndex);
-                    }
-                });
-                
-                newDot.addEventListener('mouseenter', (e) => {
-                    if (isEraseMode && isMouseDown) {
-                        eraseDot(i, j, dotIndex);
-                    }
-                });
-                
-                dotContainer.replaceChild(newDot, dotElement);
-            }
-        }
+        brailleGrid.appendChild(rowElement);
     }
     
-    // Scroll to make cursor visible
-    const currentCell = document.querySelector('.current-cell');
-    if (currentCell) {
-        currentCell.scrollIntoView({
-            behavior: 'smooth',
-            block: 'nearest',
-            inline: 'center'
-        });
-    }
+    // Scroll to make cursor visible - use requestAnimationFrame for smoother scrolling
+    requestAnimationFrame(() => {
+        const currentCell = document.querySelector('.current-cell');
+        if (currentCell) {
+            currentCell.scrollIntoView({
+                behavior: 'auto', // Changed from smooth for better performance
+                block: 'nearest',
+                inline: 'center'
+            });
+        }
+    });
 }
 
 // Function to handle dot button clicks
