@@ -428,7 +428,7 @@ body {
 
 /* Standard size dot keys - make desktop keys slightly wider */
 .key.dot-key {
-    width: 80px; /* Increased from 75px */
+    width: 120px; /* Increased from 75px */
     height: 90px;
     border-top-left-radius: 30px;
     border-top-right-radius: 30px;
