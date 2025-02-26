@@ -351,20 +351,86 @@ eraseModeBtn.addEventListener('click', () => {
     }
 });
 
+// Replace the renderBrailleGrid function with this optimized version
+
 function renderBrailleGrid() {
-    brailleGrid.innerHTML = '';  // Clear existing content
+    // Don't recreate the entire grid on every update
+    // Only update what has changed
     
-    // Create visible rows based on data
-    for (let i = 0; i < ROWS; i++) {
+    // First, ensure we have the right number of rows
+    while (brailleGrid.childElementCount < ROWS) {
         const rowElement = document.createElement('div');
         rowElement.className = 'braille-row';
+        brailleGrid.appendChild(rowElement);
+    }
+    
+    // Now update each cell in each row
+    for (let i = 0; i < ROWS; i++) {
+        const rowElement = brailleGrid.children[i];
         
-        for (let j = 0; j < COLS; j++) {
-            const cellElement = renderBrailleCell(grid[i][j], i, j);
+        // Make sure this row has the right number of cells
+        while (rowElement.childElementCount < COLS) {
+            const cellElement = document.createElement('div');
+            cellElement.className = 'braille-cell';
+            
+            const dotContainer = document.createElement('div');
+            dotContainer.className = 'braille-dot-container';
+            
+            // Create 6 dots in each cell
+            for (let k = 0; k < 6; k++) {
+                const dot = document.createElement('div');
+                dot.className = 'braille-dot braille-dot-inactive';
+                dot.dataset.dotIndex = k;
+                dotContainer.appendChild(dot);
+            }
+            
+            cellElement.appendChild(dotContainer);
             rowElement.appendChild(cellElement);
         }
         
-        brailleGrid.appendChild(rowElement);
+        // Update each cell in this row
+        for (let j = 0; j < COLS; j++) {
+            const cellElement = rowElement.children[j];
+            const isCurrentCell = i === cursor.row && j === cursor.col;
+            
+            // Update cell class without recreating the element
+            cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
+            
+            // Update dot states
+            const dotContainer = cellElement.firstChild;
+            const visualOrder = [0, 3, 1, 4, 2, 5]; // Visual dot order
+            
+            for (let k = 0; k < 6; k++) {
+                const dotElement = dotContainer.children[k];
+                const dotIndex = visualOrder[k];
+                const isActive = grid[i][j][dotIndex] === 1;
+                
+                // Update dot appearance
+                dotElement.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+                
+                // Ensure dot has proper data attributes and event listeners
+                dotElement.dataset.row = i;
+                dotElement.dataset.col = j;
+                
+                // Clean up old listeners (using a common technique with cloneNode)
+                const newDot = dotElement.cloneNode(true);
+                
+                // Add event listeners for eraser tool
+                newDot.addEventListener('mousedown', (e) => {
+                    if (isEraseMode) {
+                        eraseDot(i, j, dotIndex);
+                    }
+                });
+                
+                newDot.addEventListener('mouseenter', (e) => {
+                    if (isEraseMode && isMouseDown) {
+                        eraseDot(i, j, dotIndex);
+                    }
+                });
+                
+                dotContainer.replaceChild(newDot, dotElement);
+            }
+        }
     }
     
     // Scroll to make cursor visible
@@ -508,24 +574,55 @@ instructionsToggle.addEventListener('click', () => {
     instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions & Settings' : 'Instructions & Settings';
 });
 
-// Fullscreen button functionality
+// Replace the fullscreen button handler with this improved version
+
 fullscreenBtn.addEventListener('click', () => {
-    if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().then(() => {
-            isFullscreen = true;
-            fullscreenBtn.classList.add('active');
-        }).catch(err => {
-            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-        });
-    } else {
-        if (document.exitFullscreen) {
+    try {
+        const appElement = document.getElementById('braille-writer-app');
+        
+        if (!document.fullscreenElement) {
+            // Enter fullscreen - use the app container instead of documentElement
+            appElement.requestFullscreen().then(() => {
+                isFullscreen = true;
+                fullscreenBtn.classList.add('active');
+                fullscreenBtn.textContent = "Exit Full";
+                
+                // Apply fullscreen-specific styling
+                appElement.classList.add('fullscreen-mode');
+                document.body.classList.add('fullscreen-active');
+            }).catch(err => {
+                console.error(`Fullscreen error: ${err.message} (${err.name})`);
+            });
+        } else {
+            // Exit fullscreen
             document.exitFullscreen().then(() => {
                 isFullscreen = false;
                 fullscreenBtn.classList.remove('active');
+                fullscreenBtn.textContent = "Full Screen";
+                
+                // Remove fullscreen-specific styling
+                appElement.classList.remove('fullscreen-mode');
+                document.body.classList.remove('fullscreen-active');
             }).catch(err => {
-                alert(`Error attempting to disable full-screen mode: ${err.message} (${err.name})`);
+                console.error(`Exit fullscreen error: ${err.message} (${err.name})`);
             });
         }
+    } catch (e) {
+        console.error("Fullscreen toggle failed:", e);
+    }
+});
+
+// Add event listener for fullscreen change to ensure proper cleanup
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        // User exited fullscreen via browser controls - clean up
+        isFullscreen = false;
+        fullscreenBtn.classList.remove('active');
+        fullscreenBtn.textContent = "Full Screen";
+        
+        const appElement = document.getElementById('braille-writer-app');
+        appElement.classList.remove('fullscreen-mode');
+        document.body.classList.remove('fullscreen-active');
     }
 });
 
@@ -774,3 +871,10 @@ function setupTouchHandlers() {
 
 // Call this after initializing the app
 setupTouchHandlers();
+
+// Initialize the app with a single call to each setup function
+slider.value = cursor.col;
+updateCellCount();
+renderBrailleGrid();
+setupFocusManagement(); // Call this once only
+setupTouchHandlers(); // Call this once only
