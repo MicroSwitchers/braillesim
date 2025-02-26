@@ -25,7 +25,7 @@ let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
 let isKeySoundEnabled = true;
-let isProcessingMultiKeys = false; // New flag to track multi-key processing
+let shouldAdvanceCursor = false; // NEW: Flag to track when to move cursor
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -213,16 +213,24 @@ function startContinuousMovement(action) {
     }, 100);
 }
 
+// FIXED: handleKeyDown - just update the current cell
 function handleKeyDown(e) {
     const key = e.key.toLowerCase();
     const action = keyMap[key];
 
     if (action !== undefined && !activeKeys.has(key)) {
         activeKeys.add(key);
+        
+        // If this is a dot key, update the cell but don't move cursor yet
         if (typeof action === 'number') {
             grid[cursor.row][cursor.col][action] = 1;
             renderBrailleGrid();
-        } else if (movementKeys.has(key)) {
+            
+            // Flag that we should advance the cursor when all keys are released
+            shouldAdvanceCursor = true;
+        } 
+        // Handle arrow keys immediately
+        else if (movementKeys.has(key)) {
             clearInterval(movementInterval);  // Clear any existing interval to prevent multiple moves
             if (key === 'arrowleft') {
                 moveCursor(0, -1, true);
@@ -235,6 +243,9 @@ function handleKeyDown(e) {
             } else if (key === 'arrowdown') {
                 moveCursor(1, 0); // Move down without rotating
             }
+        } else if (spaceKeys.has(key)) {
+            // For space key, just set the flag to advance cursor
+            shouldAdvanceCursor = true;
         }
         
         // Add visual feedback for button press
@@ -245,11 +256,8 @@ function handleKeyDown(e) {
     }
 }
 
-// FIXED: Updated handleKeyUp function to prevent multiple cursor movements
+// FIXED: handleKeyUp - only move cursor when all keys are released
 function handleKeyUp(e) {
-    // Skip if we're currently processing multiple keys
-    if (isProcessingMultiKeys) return;
-    
     const key = e.key.toLowerCase();
     const action = keyMap[key];
 
@@ -263,17 +271,23 @@ function handleKeyUp(e) {
             button.classList.remove('active');
         }
 
-        // Only move cursor if no more keys are pressed
+        // Only move cursor when ALL keys are released AND we have set dots in this cell
         if (activeKeys.size === 0) {
-            if (dotKeys.has(key) || spaceKeys.has(key)) {
-                // Move cursor forward after entering a dot or space
+            // Handle dot keys and space keys
+            if ((dotKeys.has(key) || spaceKeys.has(key)) && shouldAdvanceCursor) {
+                // Move cursor forward ONCE after all dot keys are released
                 moveCursor(0, 1, true);
                 
                 // Play sound if key sound is enabled
                 if (isKeySoundEnabled) {
                     playSoundSafely(keySound);
                 }
-            } else if (!movementKeys.has(key)) {
+                
+                // Reset the flag
+                shouldAdvanceCursor = false;
+            } 
+            // Handle action keys (like linespace and backspace)
+            else if (!movementKeys.has(key) && !dotKeys.has(key) && !spaceKeys.has(key)) {
                 handleAction(action);
             }
         }
@@ -543,24 +557,19 @@ function handleDotButtonClick(dotIndex) {
     if (key) {
         const keydownEvent = new KeyboardEvent('keydown', { key: key });
         document.dispatchEvent(keydownEvent);
+        
+        // Set flag to advance cursor when button is released
+        shouldAdvanceCursor = true;
     }
 }
 
-// FIXED: Completely redesigned handleDotButtonRelease to properly handle multi-key input
+// FIXED: completely rewritten handleDotButtonRelease
 function handleDotButtonRelease() {
     if (activeKeys.size > 0) {
-        // Set flag to prevent individual key processing
-        isProcessingMultiKeys = true;
-        
         // Store all keys that need to be released
         const keysToRelease = Array.from(activeKeys);
         
-        // Check if we have any dot keys in the active set
-        const hasDotOrSpaceKeys = keysToRelease.some(key => 
-            dotKeys.has(key) || spaceKeys.has(key)
-        );
-        
-        // Clear active keys immediately to prevent processing individual releases
+        // Clear active keys immediately
         activeKeys.clear();
         
         // Remove visual feedback for all buttons
@@ -571,8 +580,8 @@ function handleDotButtonRelease() {
             }
         });
         
-        // Only move cursor once if dot keys or space keys were pressed
-        if (hasDotOrSpaceKeys) {
+        // Check if we need to advance the cursor (we had dots set in this cell)
+        if (shouldAdvanceCursor) {
             // Move cursor forward exactly once for the entire character
             moveCursor(0, 1, true);
             
@@ -580,12 +589,10 @@ function handleDotButtonRelease() {
             if (isKeySoundEnabled) {
                 playSoundSafely(keySound);
             }
+            
+            // Reset the flag
+            shouldAdvanceCursor = false;
         }
-        
-        // Reset processing flag after a short delay to allow for cleanup
-        setTimeout(() => {
-            isProcessingMultiKeys = false;
-        }, 10);
     }
 }
 
@@ -673,6 +680,11 @@ dotButtons.forEach((btn, index) => {
 function handleButtonClick(key) {
     // Clear any active keys to prevent unexpected behavior
     activeKeys.clear();
+    
+    // Reset shouldAdvanceCursor flag based on the key type
+    if (dotKeys.has(key) || spaceKeys.has(key)) {
+        shouldAdvanceCursor = true;
+    }
     
     // Simulate key press and release in sequence
     const keydownEvent = new KeyboardEvent('keydown', { key: key });
