@@ -20,7 +20,8 @@ let isDragging = false;
 let isMouseDown = false;
 let movementInterval = null;
 let sliderTimeout = null;
-let activeTouches = new Set();
+// FIXED: Changed from Set to Map to track touch and key combination
+let activeTouches = new Map();
 let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
@@ -622,6 +623,7 @@ function handleDotButtonRelease() {
     }
 }
 
+// FIXED: Update handleTouchStart to save key with touch ID
 function handleTouchStart(e) {
     e.preventDefault();
     Array.from(e.changedTouches).forEach(touch => {
@@ -632,7 +634,10 @@ function handleTouchStart(e) {
             
             const key = keyButtonMap[target.id];
             if (key) {
-                activeTouches.add(touch.identifier);
+                // Store both the touch ID and the key that was pressed
+                activeTouches.set(touch.identifier, key);
+                
+                // Dispatch keydown event
                 const keydownEvent = new KeyboardEvent('keydown', { key: key });
                 document.dispatchEvent(keydownEvent);
             }
@@ -640,6 +645,7 @@ function handleTouchStart(e) {
     });
 }
 
+// FIXED: Update handleTouchEnd to handle special keys
 function handleTouchEnd(e) {
     e.preventDefault();
     Array.from(e.changedTouches).forEach(touch => {
@@ -650,7 +656,36 @@ function handleTouchEnd(e) {
         }
         
         if (activeTouches.has(touch.identifier)) {
+            // Get the key that was pressed with this touch
+            const key = activeTouches.get(touch.identifier);
+            
+            // Special handling for LS and BS buttons
+            if (key === 'a') { // LS - linespace
+                // Remove this key from active keys
+                activeKeys.delete(key);
+                
+                // Move cursor down one row
+                moveCursor(1, 0);
+                
+                // Play sound
+                playSoundSafely(keySound);
+            } 
+            else if (key === ';') { // BS - backspace
+                // Remove this key from active keys
+                activeKeys.delete(key);
+                
+                // Move cursor back one column
+                if (cursor.col > 0) {
+                    moveCursor(0, -1);
+                    playSoundSafely(keySound);
+                }
+            } 
+            // Let dot keys be handled by handleDotButtonRelease
+            
+            // Remove the touch from tracking
             activeTouches.delete(touch.identifier);
+            
+            // Process remaining dot keys together if this was the last touch
             if (activeTouches.size === 0) {
                 handleDotButtonRelease();
             }
@@ -658,11 +693,15 @@ function handleTouchEnd(e) {
     });
 }
 
+// FIXED: Update handleTouchCancel for consistency with Map
 function handleTouchCancel(e) {
     e.preventDefault();
     Array.from(e.changedTouches).forEach(touch => {
+        // Remove the touch from tracking
         activeTouches.delete(touch.identifier);
     });
+    
+    // Process remaining keys together if all touches were cancelled
     if (activeTouches.size === 0) {
         handleDotButtonRelease();
     }
@@ -743,7 +782,7 @@ spaceBtn.addEventListener('click', () => handleButtonClick('g'));
 linespaceBtn.addEventListener('click', () => handleButtonClick('a'));
 backspaceBtn.addEventListener('click', () => handleButtonClick(';'));
 
-// Event listeners for touch events
+// Event listeners for touch events - now these handle all special keys properly
 [spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
     btn.addEventListener('touchstart', handleTouchStart, { passive: false });
     btn.addEventListener('touchend', handleTouchEnd, { passive: false });
