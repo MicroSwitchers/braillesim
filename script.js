@@ -1,7 +1,6 @@
-let ROWS = 20; 
-let COLS = 31;  // Will be dynamically calculated
+const ROWS = 20;
+const COLS = 31;  // Increased from 27 to 31
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
-let MIN_COLS = 15; // Minimum number of columns to ensure usability
 const keyMap = {
     'f': 0, 'd': 1, 's': 2, 'j': 3, 'k': 4, 'l': 5,
     'g': 'space', 'h': 'space',
@@ -12,6 +11,7 @@ const dotKeys = new Set(['f', 'd', 's', 'j', 'k', 'l']);
 const spaceKeys = new Set(['g', 'h']);
 const movementKeys = new Set(['arrowup', 'arrowdown', 'arrowleft', 'arrowright']);
 
+let grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
 let cursor = { row: 0, col: 0 };
 let activeKeys = new Set();
 let isEraseMode = false;
@@ -109,7 +109,7 @@ function updateGrid(newCell, row, col) {
 
 // Remove bell warning check from updateCellCount function
 function updateCellCount() {
-    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
+    cellCount.textContent = `Cell: ${cursor.col + 1} / 31`;
     // Remove the bell warning check from here - it's now handled in checkBellWarning()
 }
 
@@ -351,154 +351,32 @@ eraseModeBtn.addEventListener('click', () => {
     }
 });
 
-// Replace the renderBrailleGrid function with this optimized version
-
 function renderBrailleGrid() {
-    // Use requestAnimationFrame for smoother rendering
-    requestAnimationFrame(() => {
-        // Check if we need to create the grid from scratch or can update it
-        if (brailleGrid.children.length === 0) {
-            createFullGrid();
-        } else {
-            updateExistingGrid();
-        }
-        
-        // Scroll to make cursor visible with less jank
-        const currentCell = document.querySelector('.current-cell');
-        if (currentCell) {
-            // Only scroll if needed
-            const rect = currentCell.getBoundingClientRect();
-            const containerRect = brailleGrid.getBoundingClientRect();
-            
-            if (rect.left < containerRect.left || 
-                rect.right > containerRect.right ||
-                rect.top < containerRect.top || 
-                rect.bottom > containerRect.bottom) {
-                    
-                currentCell.scrollIntoView({
-                    behavior: 'auto', // Changed from 'smooth' for better performance
-                    block: 'nearest',
-                    inline: 'center'
-                });
-            }
-        }
-    });
-}
-
-// Function to create the entire grid
-function createFullGrid() {
-    const fragment = document.createDocumentFragment(); // Use document fragment for better performance
+    brailleGrid.innerHTML = '';  // Clear existing content
     
+    // Create visible rows based on data
     for (let i = 0; i < ROWS; i++) {
         const rowElement = document.createElement('div');
         rowElement.className = 'braille-row';
-        rowElement.dataset.row = i;
         
         for (let j = 0; j < COLS; j++) {
-            const cellElement = createBrailleCell(grid[i][j], i, j);
+            const cellElement = renderBrailleCell(grid[i][j], i, j);
             rowElement.appendChild(cellElement);
         }
         
-        fragment.appendChild(rowElement);
+        brailleGrid.appendChild(rowElement);
     }
     
-    brailleGrid.innerHTML = ''; // Clear existing content
-    brailleGrid.appendChild(fragment);
-}
-
-// Function to update only changed cells
-function updateExistingGrid() {
-    // Update current cell indicators
-    document.querySelectorAll('.current-cell').forEach(cell => {
-        cell.classList.remove('current-cell');
-    });
-    
-    // Find the current row and appropriate cell
-    const rowElement = brailleGrid.children[cursor.row];
-    if (rowElement && rowElement.children[cursor.col]) {
-        rowElement.children[cursor.col].classList.add('current-cell');
-    }
-    
-    // Update dot states for visible cells only
-    for (let i = Math.max(0, cursor.row - 5); i <= Math.min(ROWS - 1, cursor.row + 5); i++) {
-        const rowElement = brailleGrid.children[i];
-        if (!rowElement) continue;
-        
-        for (let j = Math.max(0, cursor.col - 15); j <= Math.min(COLS - 1, cursor.col + 15); j++) {
-            const cellElement = rowElement.children[j];
-            if (!cellElement) continue;
-            
-            const dotContainer = cellElement.querySelector('.braille-dot-container');
-            if (!dotContainer) continue;
-            
-            // Update each dot's state if needed
-            const dots = dotContainer.querySelectorAll('.braille-dot');
-            [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
-                const dot = dots[visualPosition];
-                const isActive = grid[i][j][dotIndex] === 1;
-                const hasActiveClass = dot.classList.contains('braille-dot-active');
-                
-                // Only update if the state changed
-                if (isActive !== hasActiveClass) {
-                    dot.classList.toggle('braille-dot-active');
-                    dot.classList.toggle('braille-dot-inactive');
-                }
-            });
-        }
+    // Scroll to make cursor visible
+    const currentCell = document.querySelector('.current-cell');
+    if (currentCell) {
+        currentCell.scrollIntoView({
+            behavior: 'smooth',
+            block: 'nearest',
+            inline: 'center'
+        });
     }
 }
-
-// Optimize cell creation with event delegation
-function createBrailleCell(cell, rowIndex, colIndex) {
-    const isCurrentCell = rowIndex === cursor.row && colIndex === cursor.col;
-    const cellElement = document.createElement('div');
-    cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
-    cellElement.dataset.row = rowIndex;
-    cellElement.dataset.col = colIndex;
-
-    const dotContainer = document.createElement('div');
-    dotContainer.className = 'braille-dot-container';
-
-    // The dots are ordered in visual order: 1,4,2,5,3,6 which maps to array indices 0,3,1,4,2,5
-    [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
-        const dot = document.createElement('div');
-        dot.className = `braille-dot ${cell[dotIndex] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
-        
-        // Store dot data as attributes for eraser tool
-        dot.dataset.row = rowIndex;
-        dot.dataset.col = colIndex;
-        dot.dataset.dotIndex = dotIndex;
-        
-        // Remove individual event listeners and use delegation
-        dotContainer.appendChild(dot);
-    });
-
-    cellElement.appendChild(dotContainer);
-    return cellElement;
-}
-
-// Use event delegation for dot interaction
-brailleGrid.addEventListener('mousedown', (e) => {
-    const dot = e.target.closest('.braille-dot');
-    if (dot && isEraseMode) {
-        const row = parseInt(dot.dataset.row);
-        const col = parseInt(dot.dataset.col);
-        const dotIndex = parseInt(dot.dataset.dotIndex);
-        eraseDot(row, col, dotIndex);
-    }
-});
-
-brailleGrid.addEventListener('mouseover', (e) => {
-    if (isMouseDown && isEraseMode) {
-        const dot = e.target.closest('.braille-dot');
-        if (dot) {
-            const row = parseInt(dot.dataset.row);
-            const col = parseInt(dot.dataset.col);
-            const dotIndex = parseInt(dot.dataset.dotIndex);
-            eraseDot(row, col, dotIndex);
-        }
-    }
-});
 
 // Function to handle dot button clicks
 function handleDotButtonClick(dotIndex) {
@@ -519,12 +397,16 @@ function handleDotButtonRelease() {
     }
 }
 
-// Touch event handlers
+// Replace the existing handleTouchStart and handleTouchEnd functions
+
 function handleTouchStart(e) {
     e.preventDefault();
     Array.from(e.changedTouches).forEach(touch => {
         const target = touch.target.closest('.key');
         if (target) {
+            // Add visual feedback immediately
+            target.classList.add('active');
+            
             const key = keyButtonMap[target.id];
             if (key) {
                 activeTouches.add(touch.identifier);
@@ -538,6 +420,12 @@ function handleTouchStart(e) {
 function handleTouchEnd(e) {
     e.preventDefault();
     Array.from(e.changedTouches).forEach(touch => {
+        const target = touch.target.closest('.key');
+        if (target) {
+            // Remove visual feedback
+            target.classList.remove('active');
+        }
+        
         if (activeTouches.has(touch.identifier)) {
             activeTouches.delete(touch.identifier);
             if (activeTouches.size === 0) {
@@ -620,44 +508,24 @@ instructionsToggle.addEventListener('click', () => {
     instructionsToggle.textContent = instructionsDrawer.classList.contains('open') ? 'Close Instructions & Settings' : 'Instructions & Settings';
 });
 
-// Replace the existing fullscreen button click handler with this improved version
-
+// Fullscreen button functionality
 fullscreenBtn.addEventListener('click', () => {
-    const appContainer = document.getElementById('braille-writer-app');
-    
     if (!document.fullscreenElement) {
-        // Request fullscreen on the app container, not the entire document
-        appContainer.requestFullscreen().then(() => {
+        document.documentElement.requestFullscreen().then(() => {
             isFullscreen = true;
             fullscreenBtn.classList.add('active');
-            fullscreenBtn.textContent = "Exit Full";
         }).catch(err => {
-            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+            alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
         });
     } else {
         if (document.exitFullscreen) {
             document.exitFullscreen().then(() => {
                 isFullscreen = false;
                 fullscreenBtn.classList.remove('active');
-                fullscreenBtn.textContent = "Full Screen";
             }).catch(err => {
-                console.error(`Error attempting to disable full-screen mode: ${err.message}`);
+                alert(`Error attempting to disable full-screen mode: ${err.message} (${err.name})`);
             });
         }
-    }
-});
-
-// Add an event listener for fullscreen changes
-document.addEventListener('fullscreenchange', () => {
-    const isInFullscreen = Boolean(document.fullscreenElement);
-    isFullscreen = isInFullscreen;
-    
-    if (isInFullscreen) {
-        fullscreenBtn.classList.add('active');
-        fullscreenBtn.textContent = "Exit Full";
-    } else {
-        fullscreenBtn.classList.remove('active');
-        fullscreenBtn.textContent = "Full Screen";
     }
 });
 
@@ -703,10 +571,21 @@ function playKeySound() {
 }
 
 // Prevent zooming when double-tapping on controls
+
+// Replace this block:
 document.querySelectorAll('.key, .small-button').forEach(element => {
     element.addEventListener('touchend', (e) => {
         e.preventDefault();
         // Existing handler code...
+    }, { passive: false });
+});
+
+// With this improved version:
+document.querySelectorAll('.key, .small-button').forEach(element => {
+    element.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        // Prevent double-tap zoom and maintain touch feedback
+        element.classList.remove('active');
     }, { passive: false });
 });
 
@@ -853,269 +732,45 @@ window.addEventListener('beforeunload', (e) => {
     }
 });
 
-// Add touch event handling for top buttons
+// Add this after your existing initialization code
 
-function setupTouchSupport() {
-    // Get all buttons in the header
-    const headerButtons = document.querySelectorAll('.header-buttons .small-button');
-    
-    // Add touch handlers to each button
-    headerButtons.forEach(button => {
-        button.addEventListener('touchstart', function(e) {
-            // Don't prevent default here to allow the touch to register
-            this.classList.add('active');
-        }, { passive: true });
-        
-        button.addEventListener('touchend', function(e) {
-            this.classList.remove('active');
-            
-            // Manually trigger the click event
-            this.click();
-            
-            // Refocus on app container after a slight delay
-            setTimeout(() => {
-                const appContainer = document.getElementById('braille-writer-app');
-                if (appContainer) appContainer.focus();
-            }, 100);
-        });
-    });
-    
-    // Also add touch support for key buttons
-    document.querySelectorAll('.key').forEach(key => {
-        key.addEventListener('touchstart', function(e) {
-            this.classList.add('active');
-            
-            // Get the corresponding keyboard key from the button ID
-            const buttonId = this.id;
-            const keyboardKey = keyButtonMap[buttonId];
-            
-            if (keyboardKey) {
-                // Simulate the keyboard event
-                handleKeyDown({ key: keyboardKey, preventDefault: () => {} });
-            }
-        }, { passive: true });
-        
-        key.addEventListener('touchend', function(e) {
-            this.classList.remove('active');
-            
-            // Get the corresponding keyboard key from the button ID
-            const buttonId = this.id;
-            const keyboardKey = keyButtonMap[buttonId];
-            
-            if (keyboardKey) {
-                // Simulate key up
-                handleKeyUp({ key: keyboardKey });
-            }
-            
-            // Refocus on app container
-            setTimeout(() => {
-                const appContainer = document.getElementById('braille-writer-app');
-                if (appContainer) appContainer.focus();
-            }, 100);
-        });
-    });
-}
-
-// Update the focus management function
-function setupFocusManagement() {
-    // Make the braille writer app container focusable
-    const appContainer = document.getElementById('braille-writer-app');
-    appContainer.setAttribute('tabindex', '0');
-    
-    // Set initial focus to the app container when page loads
-    window.addEventListener('load', () => {
-        appContainer.focus();
-    });
-    
-    // Set focus immediately (in case DOM already loaded)
-    appContainer.focus();
-    
-    // Re-focus app when clicking anywhere in the app
-    appContainer.addEventListener('mousedown', () => {
-        appContainer.focus();
-    });
-    
-    // Prevent Tab key from moving focus out of the app
-    appContainer.addEventListener('keydown', (e) => {
-        if (e.key === 'Tab') {
+// Ensure all buttons have proper touch support
+function setupTouchHandlers() {
+    // Add touch support to all small buttons in the header
+    const smallButtons = document.querySelectorAll('.small-button');
+    smallButtons.forEach(button => {
+        button.addEventListener('touchstart', (e) => {
             e.preventDefault();
-        }
+            // Visual feedback
+            button.classList.add('active');
+            // Trigger the click event
+            setTimeout(() => button.click(), 0);
+        }, { passive: false });
+        
+        button.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            button.classList.remove('active');
+        }, { passive: false });
+        
+        button.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            button.classList.remove('active');
+        }, { passive: false });
     });
     
-    // MODIFY THIS PART: Don't prevent default for button clicks
-    document.querySelectorAll('.key, .small-button').forEach(button => {
-        button.addEventListener('mousedown', (e) => {
-            // Allow the event to proceed naturally for buttons
-            // DON'T call e.preventDefault() here
-            
-            // Refocus after the event
-            setTimeout(() => {
-                appContainer.focus();
-            }, 10);
-        });
-    });
+    // Add touch support for instructions drawer toggle
+    const instructionsToggle = document.getElementById('instructions-toggle');
+    instructionsToggle.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.add('active');
+        setTimeout(() => instructionsToggle.click(), 0);
+    }, { passive: false });
     
-    // Special handling for slider to maintain functionality
-    const slider = document.getElementById('slider');
-    slider.addEventListener('mousedown', () => {
-        // Refocus app container after a slight delay to allow slider interaction
-        setTimeout(() => {
-            appContainer.focus();
-        }, 10);
-    });
+    instructionsToggle.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        instructionsToggle.classList.remove('active');
+    }, { passive: false });
 }
 
-// Initialize everything in one place
-function initializeBrailleWriter() {
-    // Do initial size calculation after a small delay to ensure DOM has fully loaded
-    setTimeout(() => {
-        resizeGridToFit();
-    }, 100);
-    
-    slider.value = cursor.col;
-    updateCellCount();
-    createFullGrid(); // Use the new function instead of renderBrailleGrid
-    setupFocusManagement();
-    setupTouchSupport();
-    
-    // Throttled window resize handler
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-        if (resizeTimeout) clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            resizeGridToFit(); // Recalculate on resize
-        }, 250);
-    });
-}
-
-// Call this once when document is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initializeBrailleWriter);
-} else {
-    initializeBrailleWriter();
-}
-
-// Replace the static grid initialization with a function
-function initializeGrid(rows, cols) {
-    return Array.from({ length: rows }, () => 
-        Array.from({ length: cols }, () => [...EMPTY_CELL])
-    );
-}
-
-// Create initial grid
-let grid = initializeGrid(ROWS, COLS);
-
-// Add this function to calculate optimal column count
-function calculateOptimalColumnCount() {
-    // Get the braille grid width 
-    const gridWidth = brailleGrid.clientWidth;
-    
-    // Calculate cell width including margins (20px cell width + 2px left margin + 2px right margin)
-    const cellTotalWidth = 24; 
-    
-    // Calculate how many cells can fit in the grid width
-    const possibleCols = Math.floor(gridWidth / cellTotalWidth);
-    
-    // Ensure we have at least the minimum number of columns
-    return Math.max(possibleCols, MIN_COLS);
-}
-
-// Create a function to resize the grid when needed
-function resizeGridToFit() {
-    const newColCount = calculateOptimalColumnCount();
-    
-    // Only proceed if column count has changed
-    if (newColCount !== COLS) {
-        console.log(`Resizing grid: ${COLS} → ${newColCount} columns`);
-        
-        // Create a new grid with new dimensions
-        const newGrid = initializeGrid(ROWS, newColCount);
-        
-        // Copy existing content to new grid
-        for (let i = 0; i < ROWS; i++) {
-            for (let j = 0; j < Math.min(COLS, newColCount); j++) {
-                if (i < grid.length && j < grid[i].length) {
-                    newGrid[i][j] = [...grid[i][j]];
-                }
-            }
-        }
-        
-        // Update global variables
-        COLS = newColCount;
-        grid = newGrid;
-        
-        // Update slider max value
-        slider.max = COLS - 1;
-        
-        // Ensure cursor is within bounds
-        cursor.col = Math.min(cursor.col, COLS - 1);
-        
-        // Update UI
-        updateCellCount();
-        createFullGrid(); // Recreate the entire grid with new column count
-        
-        // Update bell warning position
-        checkBellWarning();
-        
-        // Update slider after changing COLS
-        updateSlider();
-    }
-}
-
-// Replace the updateCellCount function
-function updateCellCount() {
-    cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
-}
-
-// Modify the initializeBrailleWriter function to include our new resize functionality
-function initializeBrailleWriter() {
-    // Do initial size calculation after a small delay to ensure DOM has fully loaded
-    setTimeout(() => {
-        resizeGridToFit();
-    }, 100);
-    
-    slider.value = cursor.col;
-    updateCellCount();
-    createFullGrid();
-    setupFocusManagement();
-    setupTouchSupport();
-    
-    // Throttled window resize handler
-    let resizeTimeout;
-    window.addEventListener('resize', () => {
-        if (resizeTimeout) clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-            resizeGridToFit(); // Recalculate on resize
-        }, 250);
-    });
-}
-
-// Add this function to update the slider when column count changes
-function updateSlider() {
-    // Update slider attributes
-    slider.max = COLS - 1;
-    
-    // Update cell count
-    updateCellCount();
-    
-    // If cursor position exceeds new max, adjust it
-    if (cursor.col >= COLS) {
-        cursor.col = COLS - 1;
-        slider.value = cursor.col;
-    }
-}
-
-// Call this function in resizeGridToFit() after updating COLS
-function resizeGridToFit() {
-    const newColCount = calculateOptimalColumnCount();
-    
-    // Only proceed if column count has changed
-    if (newColCount !== COLS) {
-        // ...existing code...
-        
-        // Update slider after changing COLS
-        updateSlider();
-        
-        // ...rest of existing code...
-    }
-}
+// Call this after initializing the app
+setupTouchHandlers();
