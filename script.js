@@ -615,167 +615,49 @@ backspaceBtn.addEventListener('click', () => {
     document.dispatchEvent(keyupEvent);
 });
 
-// Replace the entire instructions drawer event handler section with this consolidated version
+// Replace the entire instructions drawer logic with this simplified version
 
-// Instructions drawer functionality - CONSOLIDATED VERSION
+// Simple drawer toggle function - cleaner approach with no duplicates
 function setupInstructionsDrawer() {
     const instructionsDrawer = document.getElementById('instructions-drawer');
     const instructionsToggle = document.getElementById('instructions-toggle');
-    const appContainer = document.getElementById('braille-writer-app');
     
-    // Remove any existing event listeners (important cleanup)
-    instructionsToggle.removeEventListener('click', () => {});
+    if (!instructionsToggle) {
+        console.error('Instructions toggle button not found!');
+        return;
+    }
     
-    // Add the consolidated click handler
-    instructionsToggle.addEventListener('click', (e) => {
-        // Toggle the drawer state
+    // Remove ALL existing event listeners by cloning and replacing
+    const newToggle = instructionsToggle.cloneNode(true);
+    instructionsToggle.parentNode.replaceChild(newToggle, instructionsToggle);
+    
+    // Add the single click handler
+    newToggle.addEventListener('click', () => {
         instructionsDrawer.classList.toggle('open');
-        
-        // Update button text
-        instructionsToggle.textContent = instructionsDrawer.classList.contains('open') 
+        newToggle.textContent = instructionsDrawer.classList.contains('open') 
             ? 'Close Instructions & Settings' 
             : 'Instructions & Settings';
-        
-        // Return focus to app after drawer interaction
-        setTimeout(() => {
-            appContainer.focus();
-        }, 100);
     });
     
     // Add touch support
-    instructionsToggle.addEventListener('touchstart', (e) => {
+    newToggle.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        instructionsToggle.classList.add('active');
+        newToggle.classList.add('active');
     }, { passive: false });
     
-    instructionsToggle.addEventListener('touchend', (e) => {
+    newToggle.addEventListener('touchend', (e) => {
         e.preventDefault();
-        instructionsToggle.classList.remove('active');
-        // Trigger the click event after the touch
-        instructionsToggle.click();
+        newToggle.classList.remove('active');
+        // Directly toggle the drawer
+        instructionsDrawer.classList.toggle('open');
+        newToggle.textContent = instructionsDrawer.classList.contains('open') 
+            ? 'Close Instructions & Settings' 
+            : 'Instructions & Settings';
     }, { passive: false });
 }
 
-// Call this function once in the initialization block
-// Add this line to your initApp function
-// initApp() function (around line 1500):
-
-function initApp() {
-    // Initial values
-    slider.value = cursor.col;
-    updateCellCount();
-    renderBrailleGrid();
-    
-    // Set up focus management (once)
-    const appContainer = document.getElementById('braille-writer-app');
-    appContainer.setAttribute('tabindex', '0');
-    appContainer.focus();
-    
-    // Set up instructions drawer (just add this line)
-    setupInstructionsDrawer();
-    
-    // Rest of your existing initApp code...
-}
-
-// Make sure this function is called only once
-initApp();
-
-// Replace the fullscreen button handler with this improved version
-
-fullscreenBtn.addEventListener('click', () => {
-    try {
-        const appElement = document.getElementById('braille-writer-app');
-        
-        if (!document.fullscreenElement) {
-            // Pre-apply some styles to prevent black screen
-            document.body.classList.add('fullscreen-pending');
-            
-            appElement.requestFullscreen().then(() => {
-                isFullscreen = true;
-                fullscreenBtn.classList.add('active');
-                fullscreenBtn.textContent = "Exit Full";
-                
-                // Apply fullscreen styles
-                appElement.classList.add('fullscreen-mode');
-                document.body.classList.add('fullscreen-active');
-                document.body.classList.remove('fullscreen-pending');
-            }).catch(err => {
-                document.body.classList.remove('fullscreen-pending');
-                console.error(`Fullscreen error: ${err.message}`);
-            });
-        } else {
-            document.exitFullscreen().then(() => {
-                isFullscreen = false;
-                fullscreenBtn.classList.remove('active');
-                fullscreenBtn.textContent = "Full Screen";
-                
-                // Remove fullscreen styles
-                appElement.classList.remove('fullscreen-mode');
-                document.body.classList.remove('fullscreen-active');
-            }).catch(err => {
-                console.error(`Exit fullscreen error: ${err.message}`);
-            });
-        }
-    } catch (e) {
-        console.error("Fullscreen toggle failed:", e);
-    }
-});
-
-// Add event listener for fullscreen change to ensure proper cleanup
-document.addEventListener('fullscreenchange', () => {
-    if (!document.fullscreenElement) {
-        // User exited fullscreen via browser controls - clean up
-        isFullscreen = false;
-        fullscreenBtn.classList.remove('active');
-        fullscreenBtn.textContent = "Full Screen";
-        
-        const appElement = document.getElementById('braille-writer-app');
-        appElement.classList.remove('fullscreen-mode');
-        document.body.classList.remove('fullscreen-active');
-    }
-});
-
-// Bell warning functionality
-bellWarningSelect.addEventListener('change', (e) => {
-    bellWarningSpaces = parseInt(e.target.value);
-    previousBellWarningPosition = -1; // Reset previous warning position
-});
-
-// Toggle Bell functionality
-toggleBell.addEventListener('change', (e) => {
-    isBellEnabled = e.target.checked;
-});
-
-// Toggle Key Sound functionality
-toggleKeySound.addEventListener('change', (e) => {
-    isKeySoundEnabled = e.target.checked;
-});
-
-// Play key sound
-function playKeySound() {
-    if (isKeySoundEnabled) {
-        playSoundSafely(keySound);
-    }
-}
-
-// Prevent zooming when double-tapping on controls
-
-// Replace this block:
-document.querySelectorAll('.key, .small-button').forEach(element => {
-    element.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        // Existing handler code...
-    }, { passive: false });
-});
-
-// With this improved version:
-document.querySelectorAll('.key, .small-button').forEach(element => {
-    element.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        // Prevent double-tap zoom and maintain touch feedback
-        element.classList.remove('active');
-    }, { passive: false });
-});
+// Call this function at the VERY END of your script, after all other initialization
+setupInstructionsDrawer();
 
 // Initialize the app
 slider.value = cursor.col;
@@ -1123,5 +1005,59 @@ window.addEventListener('beforeunload', (e) => {
         const message = "You have unsaved braille text. If you leave now, your work will be lost.";
         e.returnValue = message;
         return message;
+    }
+});
+
+// Replace your fullscreen button handler with this fixed version
+
+fullscreenBtn.addEventListener('click', () => {
+    try {
+        const appElement = document.getElementById('braille-writer-app');
+        
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            appElement.requestFullscreen().then(() => {
+                isFullscreen = true;
+                // Important: Set active class AFTER fullscreen is successfully entered
+                fullscreenBtn.classList.add('active');
+                fullscreenBtn.textContent = "Exit Full";
+                
+                // Apply fullscreen styles
+                appElement.classList.add('fullscreen-mode');
+                document.body.classList.add('fullscreen-active');
+            }).catch(err => {
+                console.error(`Fullscreen error: ${err.message}`);
+            });
+        } else {
+            // Exit fullscreen
+            document.exitFullscreen().then(() => {
+                isFullscreen = false;
+                // Important: Remove active class AFTER fullscreen is successfully exited
+                fullscreenBtn.classList.remove('active');
+                fullscreenBtn.textContent = "Full Screen";
+                
+                // Remove fullscreen styles
+                appElement.classList.remove('fullscreen-mode');
+                document.body.classList.remove('fullscreen-active');
+            }).catch(err => {
+                console.error(`Exit fullscreen error: ${err.message}`);
+            });
+        }
+    } catch (e) {
+        console.error("Fullscreen toggle failed:", e);
+    }
+});
+
+// Add this event listener to handle when user exits fullscreen via browser controls
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && isFullscreen) {
+        // User exited fullscreen via browser controls - update our state
+        isFullscreen = false;
+        fullscreenBtn.classList.remove('active');
+        fullscreenBtn.textContent = "Full Screen";
+        
+        const appElement = document.getElementById('braille-writer-app');
+        appElement.classList.remove('fullscreen-mode');
+        document.body.classList.remove('fullscreen-active');
     }
 });
