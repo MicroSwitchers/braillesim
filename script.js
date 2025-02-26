@@ -25,7 +25,7 @@ let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
 let isBellEnabled = true;
 let isKeySoundEnabled = true;
-let shouldAdvanceCursor = false; // NEW: Flag to track when to move cursor
+let shouldAdvanceCursor = false; // Flag to track when to move cursor
 
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
@@ -164,7 +164,7 @@ function moveCursor(rowDelta, colDelta, rotate = false) {
     }
 }
 
-// NEW: Add a function to force-refresh the slider appearance
+// Add a function to force-refresh the slider appearance
 function refreshSlider() {
     // This forces the browser to re-render the slider by causing a reflow
     slider.style.display = 'none';
@@ -213,7 +213,7 @@ function startContinuousMovement(action) {
     }, 100);
 }
 
-// FIXED: handleKeyDown - just update the current cell
+// FIXED: handleKeyDown with improved handling for all key types
 function handleKeyDown(e) {
     const key = e.key.toLowerCase();
     const action = keyMap[key];
@@ -229,6 +229,21 @@ function handleKeyDown(e) {
             // Flag that we should advance the cursor when all keys are released
             shouldAdvanceCursor = true;
         } 
+        // Handle special action keys (linespace and backspace)
+        else if (action === 'linespace') {
+            // Visual feedback
+            const button = buttonKeyMap[key];
+            if (button) {
+                button.classList.add('active');
+            }
+        }
+        else if (action === 'backspace') {
+            // Visual feedback
+            const button = buttonKeyMap[key];
+            if (button) {
+                button.classList.add('active');
+            }
+        }
         // Handle arrow keys immediately
         else if (movementKeys.has(key)) {
             clearInterval(movementInterval);  // Clear any existing interval to prevent multiple moves
@@ -256,7 +271,7 @@ function handleKeyDown(e) {
     }
 }
 
-// FIXED: handleKeyUp - only move cursor when all keys are released
+// FIXED: handleKeyUp with proper handling for LS and BS
 function handleKeyUp(e) {
     const key = e.key.toLowerCase();
     const action = keyMap[key];
@@ -271,9 +286,9 @@ function handleKeyUp(e) {
             button.classList.remove('active');
         }
 
-        // Only move cursor when ALL keys are released AND we have set dots in this cell
+        // Only process when ALL keys are released
         if (activeKeys.size === 0) {
-            // Handle dot keys and space keys
+            // Handle dot keys and space keys - advance one cell
             if ((dotKeys.has(key) || spaceKeys.has(key)) && shouldAdvanceCursor) {
                 // Move cursor forward ONCE after all dot keys are released
                 moveCursor(0, 1, true);
@@ -286,7 +301,18 @@ function handleKeyUp(e) {
                 // Reset the flag
                 shouldAdvanceCursor = false;
             } 
-            // Handle action keys (like linespace and backspace)
+            // IMPORTANT FIX: Handle linespace and backspace directly in keyUp
+            else if (action === 'linespace') {
+                moveCursor(1, 0); // Down one row
+                playSoundSafely(keySound);
+            }
+            else if (action === 'backspace') {
+                if (cursor.col > 0) {
+                    moveCursor(0, -1); // Left one column
+                    playSoundSafely(keySound);
+                }
+            }
+            // Handle other action keys
             else if (!movementKeys.has(key) && !dotKeys.has(key) && !spaceKeys.has(key)) {
                 handleAction(action);
             }
@@ -678,23 +704,38 @@ dotButtons.forEach((btn, index) => {
 
 // FIXED: Improved helper function to handle button clicks
 function handleButtonClick(key) {
-    // Clear any active keys to prevent unexpected behavior
-    activeKeys.clear();
-    
-    // Reset shouldAdvanceCursor flag based on the key type
-    if (dotKeys.has(key) || spaceKeys.has(key)) {
-        shouldAdvanceCursor = true;
+    // Specific handling for linespace and backspace
+    if (key === 'a' || key === ';') {
+        // Clear any active keys to prevent unexpected behavior
+        activeKeys.clear();
+        
+        // Simulate key press and release in sequence
+        const keydownEvent = new KeyboardEvent('keydown', { key: key });
+        document.dispatchEvent(keydownEvent);
+        
+        // Give a slight delay to simulate real key press
+        setTimeout(() => {
+            const keyupEvent = new KeyboardEvent('keyup', { key: key });
+            document.dispatchEvent(keyupEvent);
+        }, 50);
+    } else {
+        // Handle dot keys and other keys
+        activeKeys.clear();
+        
+        // Set flag for space key
+        if (spaceKeys.has(key)) {
+            shouldAdvanceCursor = true;
+        }
+        
+        // Simulate key press and release
+        const keydownEvent = new KeyboardEvent('keydown', { key: key });
+        document.dispatchEvent(keydownEvent);
+        
+        setTimeout(() => {
+            const keyupEvent = new KeyboardEvent('keyup', { key: key });
+            document.dispatchEvent(keyupEvent);
+        }, 10);
     }
-    
-    // Simulate key press and release in sequence
-    const keydownEvent = new KeyboardEvent('keydown', { key: key });
-    document.dispatchEvent(keydownEvent);
-    
-    // Give a slight delay to simulate real key press
-    setTimeout(() => {
-        const keyupEvent = new KeyboardEvent('keyup', { key: key });
-        document.dispatchEvent(keyupEvent);
-    }, 10);
 }
 
 // Event listeners for other buttons with improved handling
