@@ -38,6 +38,50 @@ function detectTouchDevice() {
     if (isTouchDevice) {
         console.log('Touch device detected - enabling touch support');
         document.body.classList.add('touch-device');
+        
+        // Add immediate visual indicator
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: lime;
+            color: black;
+            padding: 10px;
+            border-radius: 5px;
+            font-weight: bold;
+            z-index: 99999;
+            font-size: 14px;
+        `;
+        indicator.textContent = 'TOUCH DEVICE DETECTED';
+        document.body.appendChild(indicator);
+        
+        // Add touch test area
+        const touchTest = document.createElement('div');
+        touchTest.id = 'touch-test';
+        touchTest.style.cssText = `
+            position: fixed;
+            top: 60px;
+            left: 10px;
+            width: 100px;
+            height: 50px;
+            background: red;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border-radius: 5px;
+            z-index: 99999;
+        `;
+        touchTest.textContent = 'TOUCH TEST';
+        document.body.appendChild(touchTest);
+        
+        // Basic touch test
+        touchTest.ontouchstart = function() {
+            this.style.background = 'green';
+            this.textContent = 'TOUCH WORKS!';
+        };
     }
     return isTouchDevice;
 }
@@ -135,122 +179,244 @@ function setupFallbackTouchHandlers() {
     });
 }
 
-// Universal touch handler for all buttons
-function setupUniversalTouchHandler() {
-    const buttons = [
-        { element: document.getElementById('dot1-btn'), action: () => handleDotButtonClick(0) },
-        { element: document.getElementById('dot2-btn'), action: () => handleDotButtonClick(1) },
-        { element: document.getElementById('dot3-btn'), action: () => handleDotButtonClick(2) },
-        { element: document.getElementById('dot4-btn'), action: () => handleDotButtonClick(3) },
-        { element: document.getElementById('dot5-btn'), action: () => handleDotButtonClick(4) },
-        { element: document.getElementById('dot6-btn'), action: () => handleDotButtonClick(5) },
-        { element: document.getElementById('space-btn'), action: () => insertSpace() },
-        { element: document.getElementById('linespace-btn'), action: () => linespace() },
-        { element: document.getElementById('backspace-btn'), action: () => backspace() },
-        { element: document.getElementById('all-clear-btn'), action: () => {
+// SIMPLE DIRECT TOUCH HANDLER - No event listeners, just direct properties
+function setupSimpleTouchHandlers() {
+    if (!isTouchDevice) return;
+    
+    console.log('Setting up SIMPLE touch handlers');
+    
+    // Get all buttons
+    const buttons = {
+        dot1: document.getElementById('dot1-btn'),
+        dot2: document.getElementById('dot2-btn'),
+        dot3: document.getElementById('dot3-btn'),
+        dot4: document.getElementById('dot4-btn'),
+        dot5: document.getElementById('dot5-btn'),
+        dot6: document.getElementById('dot6-btn'),
+        space: document.getElementById('space-btn'),
+        linespace: document.getElementById('linespace-btn'),
+        backspace: document.getElementById('backspace-btn'),
+        allClear: document.getElementById('all-clear-btn'),
+        eraseMode: document.getElementById('erase-mode-btn'),
+        fullscreen: document.getElementById('fullscreen-btn')
+    };
+    
+    // Direct touch handlers using ontouchstart property
+    if (buttons.dot1) {
+        buttons.dot1.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(0);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot1.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.dot2) {
+        buttons.dot2.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(1);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot2.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.dot3) {
+        buttons.dot3.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(2);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot3.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.dot4) {
+        buttons.dot4.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(3);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot4.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.dot5) {
+        buttons.dot5.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(4);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot5.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.dot6) {
+        buttons.dot6.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            handleDotButtonClick(5);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        };
+        buttons.dot6.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.space) {
+        buttons.space.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            insertSpace();
+        };
+        buttons.space.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.linespace) {
+        buttons.linespace.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            linespace();
+        };
+        buttons.linespace.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.backspace) {
+        buttons.backspace.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
+            backspace();
+        };
+        buttons.backspace.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.allClear) {
+        buttons.allClear.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
             grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
             renderBrailleGrid();
-        }},
-        { element: document.getElementById('erase-mode-btn'), action: () => {
+        };
+        buttons.allClear.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.eraseMode) {
+        buttons.eraseMode.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
             isEraseMode = !isEraseMode;
             updateEraseModeButton();
-        }},
-        { element: document.getElementById('fullscreen-btn'), action: () => {
+        };
+        buttons.eraseMode.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    if (buttons.fullscreen) {
+        buttons.fullscreen.ontouchstart = function(e) {
+            e.preventDefault();
+            this.style.background = 'red';
             const appElement = document.getElementById('braille-writer-app');
             if (!document.fullscreenElement) {
                 appElement.requestFullscreen().catch(console.error);
             } else {
                 document.exitFullscreen().catch(console.error);
             }
-        }}
+        };
+        buttons.fullscreen.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = '';
+        };
+    }
+    
+    console.log('Simple touch handlers set up complete');
+}
+
+// EMERGENCY OVERLAY SYSTEM - Creates invisible overlays with basic touch
+function createTouchOverlays() {
+    if (!isTouchDevice) return;
+    
+    console.log('Creating touch overlays as emergency backup');
+    
+    const buttonIds = [
+        'dot1-btn', 'dot2-btn', 'dot3-btn', 'dot4-btn', 'dot5-btn', 'dot6-btn',
+        'space-btn', 'linespace-btn', 'backspace-btn', 
+        'all-clear-btn', 'erase-mode-btn', 'fullscreen-btn'
     ];
-
-    buttons.forEach(({ element, action }) => {
-        if (!element) return;
-
-        // Clear any existing touch listeners
-        element.removeEventListener('touchstart', () => {});
-        element.removeEventListener('touchend', () => {});
-        element.removeEventListener('touchcancel', () => {});
-
-        // Add new simplified touch handlers
-        element.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            touchStartTime = Date.now();
-            touchStartElement = element;
-            element.classList.add('touch-active');
-            
-            console.log(`Touch start on ${element.id}`);
-            
-            // Visual feedback
-            element.style.transform = 'scale(0.95)';
-            element.style.opacity = '0.8';
-            
-        }, { passive: false });
-
-        element.addEventListener('touchend', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const touchDuration = Date.now() - touchStartTime;
-            
-            // Only execute if touch was quick and on the same element
-            if (touchStartElement === element && touchDuration < 1000) {
-                console.log(`Touch end on ${element.id} - executing action`);
-                
-                // Execute the action directly
-                try {
-                    action();
-                    console.log(`Action executed for ${element.id}`);
-                } catch (err) {
-                    console.error(`Error executing action for ${element.id}:`, err);
-                }
-            }
-            
-            // Reset visual state
-            element.classList.remove('touch-active');
-            element.style.transform = '';
-            element.style.opacity = '';
-            
-            touchStartElement = null;
-            touchStartTime = 0;
-            
-        }, { passive: false });
-
-        element.addEventListener('touchcancel', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Reset state on cancel
-            element.classList.remove('touch-active');
-            element.style.transform = '';
-            element.style.opacity = '';
-            
-            touchStartElement = null;
-            touchStartTime = 0;
-            
-            console.log(`Touch cancel on ${element.id}`);
-        }, { passive: false });
-
-        // Add mouse events as fallback (for testing on desktop)
-        if (!isTouchDevice) {
-            element.addEventListener('mousedown', function(e) {
-                element.style.transform = 'scale(0.95)';
-                element.style.opacity = '0.8';
-            });
-            
-            element.addEventListener('mouseup', function(e) {
-                element.style.transform = '';
-                element.style.opacity = '';
-            });
-            
-            element.addEventListener('mouseleave', function(e) {
-                element.style.transform = '';
-                element.style.opacity = '';
-            });
+    
+    buttonIds.forEach(buttonId => {
+        const originalButton = document.getElementById(buttonId);
+        if (!originalButton) return;
+        
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 0, 0, 0.1);
+            z-index: 1000;
+            pointer-events: auto;
+            touch-action: manipulation;
+        `;
+        
+        // Make parent relative if not already
+        if (getComputedStyle(originalButton).position === 'static') {
+            originalButton.style.position = 'relative';
         }
+        
+        // Add simple touch handler to overlay
+        overlay.ontouchstart = function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.style.background = 'rgba(0, 255, 0, 0.3)';
+            originalButton.style.background = 'lime';
+            
+            // Trigger the original button's action
+            setTimeout(() => {
+                originalButton.click();
+            }, 10);
+        };
+        
+        overlay.ontouchend = function(e) {
+            e.preventDefault();
+            this.style.background = 'rgba(255, 0, 0, 0.1)';
+            originalButton.style.background = '';
+        };
+        
+        originalButton.appendChild(overlay);
     });
 }
 
@@ -1190,12 +1356,10 @@ function initialize() {
     // Set up all components
     detectTouchDevice();
     if (isTouchDevice) {
-        createTouchDebugPanel();
-        logTouchDebug('Touch device detected, initializing touch support');
+        setupSimpleTouchHandlers();
+        createTouchOverlays();
+        console.log('Touch device setup complete');
     }
-    setupUniversalTouchHandler();
-    setupFallbackTouchHandlers();
-    setupInlineTouchHandlers();
     setupSettingsControls();
     setupToggleButtons();
     setupFullscreenHandler();

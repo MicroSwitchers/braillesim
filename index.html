@@ -41,9 +41,15 @@
         <div class="card-header">
             <h2 id="braille-writer-simulator" class="card-title">Braille Writer Simulator</h2>
             <div class="header-buttons">
-                <button id="all-clear-btn" class="small-button">All Clear</button>
-                <button id="erase-mode-btn" class="small-button">Erase Mode</button>
-                <button id="fullscreen-btn" class="small-button">Full Screen</button>
+                <button id="all-clear-btn" class="small-button" 
+                        ontouchstart="this.style.background='red';" 
+                        ontouchend="this.style.background=''; grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL])); renderBrailleGrid();">All Clear</button>
+                <button id="erase-mode-btn" class="small-button" 
+                        ontouchstart="this.style.background='red';" 
+                        ontouchend="this.style.background=''; isEraseMode = !isEraseMode; updateEraseModeButton();">Erase Mode</button>
+                <button id="fullscreen-btn" class="small-button" 
+                        ontouchstart="this.style.background='red';" 
+                        ontouchend="this.style.background=''; document.getElementById('braille-writer-app').requestFullscreen();">Full Screen</button>
             </div>
         </div>
         <div class="card-content">
@@ -53,15 +59,33 @@
                 <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
             </div>
             <div class="key-container">
-                <button class="key round-key" id="linespace-btn">LS (a)</button>
-                <button class="key dot-key" id="dot1-btn">1 (f)</button>
-                <button class="key dot-key" id="dot2-btn">2 (d)</button>
-                <button class="key dot-key" id="dot3-btn">3 (s)</button>
-                <button class="key space-key" id="space-btn">Space (G/H)</button>
-                <button class="key dot-key" id="dot4-btn">4 (j)</button>
-                <button class="key dot-key" id="dot5-btn">5 (k)</button>
-                <button class="key dot-key" id="dot6-btn">6 (l)</button>
-                <button class="key round-key" id="backspace-btn">BS (;)</button>
+                <button class="key round-key" id="linespace-btn" 
+                        ontouchstart="this.style.background='red'; linespace();" 
+                        ontouchend="this.style.background='';">LS (a)</button>
+                <button class="key dot-key" id="dot1-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(0); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">1 (f)</button>
+                <button class="key dot-key" id="dot2-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(1); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">2 (d)</button>
+                <button class="key dot-key" id="dot3-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(2); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">3 (s)</button>
+                <button class="key space-key" id="space-btn" 
+                        ontouchstart="this.style.background='red'; insertSpace();" 
+                        ontouchend="this.style.background='';">Space (G/H)</button>
+                <button class="key dot-key" id="dot4-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(3); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">4 (j)</button>
+                <button class="key dot-key" id="dot5-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(4); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">5 (k)</button>
+                <button class="key dot-key" id="dot6-btn" 
+                        ontouchstart="this.style.background='red'; handleDotButtonClick(5); setTimeout(() => handleDotButtonRelease(), 100);" 
+                        ontouchend="this.style.background='';">6 (l)</button>
+                <button class="key round-key" id="backspace-btn" 
+                        ontouchstart="this.style.background='red'; backspace();" 
+                        ontouchend="this.style.background='';">BS (;)</button>
             </div>
         </div>
     </div>
