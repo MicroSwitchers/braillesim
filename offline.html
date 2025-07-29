@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Braille Writer Simulator</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            color: #ffd700;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+        }
+        .offline-container {
+            max-width: 400px;
+            padding: 40px 20px;
+            background: rgba(255, 215, 0, 0.1);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .offline-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: #ffd700;
+            margin-bottom: 20px;
+        }
+        p {
+            margin-bottom: 30px;
+            opacity: 0.8;
+        }
+        .retry-button {
+            background: linear-gradient(to bottom, #ffe866, #ffd700 50%, #e6c200);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .retry-button:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">📱</div>
+        <h1>You're Offline</h1>
+        <p>Don't worry! The Braille Writer Simulator works offline. You can continue practicing Braille writing without an internet connection.</p>
+        <button class="retry-button" onclick="window.location.reload()">
+            🔄 Try Again
+        </button>
+    </div>
+</body>
+</html>

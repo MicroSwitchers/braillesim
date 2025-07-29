@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cache Refresh - Braille Writer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+            color: #ffd700;
+            margin: 0;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 215, 0, 0.1);
+            padding: 40px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            margin-bottom: 20px;
+        }
+        p {
+            margin-bottom: 30px;
+            opacity: 0.9;
+        }
+        .refresh-button {
+            background: linear-gradient(to bottom, #ffe866, #ffd700 50%, #e6c200);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 6px;
+            color: #000;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: transform 0.2s ease;
+        }
+        .refresh-button:hover {
+            transform: translateY(-2px);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+            background: rgba(76, 175, 80, 0.2);
+            color: #4CAF50;
+            display: none;
+        }
+        .progress {
+            margin-top: 20px;
+            text-align: left;
+        }
+        .progress-item {
+            padding: 5px 0;
+            opacity: 0.6;
+        }
+        .progress-item.completed {
+            opacity: 1;
+            color: #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">🔄</div>
+        <h1>Update Icon Cache</h1>
+        <p>Click the button below to refresh all cached icons and ensure you see the latest version of the Braille Writer icon.</p>
+        
+        <button class="refresh-button" onclick="refreshCache()">
+            🔄 Refresh Icon Cache
+        </button>
+        
+        <button class="refresh-button" onclick="openApp()">
+            📱 Open Braille Writer
+        </button>
+        
+        <div class="progress" id="progress">
+            <div class="progress-item" id="step1">Clearing old caches...</div>
+            <div class="progress-item" id="step2">Removing service worker...</div>
+            <div class="progress-item" id="step3">Refreshing icons...</div>
+            <div class="progress-item" id="step4">Reloading application...</div>
+        </div>
+        
+        <div class="status" id="status">
+            Cache refresh completed! Your icons should now be updated.
+        </div>
+    </div>
+
+    <script>
+        async function refreshCache() {
+            const progress = document.getElementById('progress');
+            const status = document.getElementById('status');
+            
+            progress.style.display = 'block';
+            
+            try {
+                // Step 1: Clear all caches
+                document.getElementById('step1').classList.add('completed');
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    await Promise.all(
+                        cacheNames.map(cacheName => {
+                            console.log('Deleting cache:', cacheName);
+                            return caches.delete(cacheName);
+                        })
+                    );
+                }
+                
+                await delay(500);
+                
+                // Step 2: Unregister service worker
+                document.getElementById('step2').classList.add('completed');
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    await Promise.all(
+                        registrations.map(registration => {
+                            console.log('Unregistering service worker');
+                            return registration.unregister();
+                        })
+                    );
+                }
+                
+                await delay(500);
+                
+                // Step 3: Force refresh all icon references
+                document.getElementById('step3').classList.add('completed');
+                const iconLinks = [
+                    'link[rel="icon"]',
+                    'link[rel="apple-touch-icon"]',
+                    'link[rel="shortcut icon"]'
+                ];
+                
+                iconLinks.forEach(selector => {
+                    const link = document.querySelector(selector);
+                    if (link) {
+                        const href = link.href;
+                        link.href = '';
+                        setTimeout(() => {
+                            link.href = href.includes('?') ? 
+                                href.split('?')[0] + '?v=' + Date.now() : 
+                                href + '?v=' + Date.now();
+                        }, 100);
+                    }
+                });
+                
+                await delay(1000);
+                
+                // Step 4: Prepare for reload
+                document.getElementById('step4').classList.add('completed');
+                status.style.display = 'block';
+                
+                await delay(1000);
+                
+                // Redirect to main app
+                window.location.href = './index.html?cache_cleared=' + Date.now();
+                
+            } catch (error) {
+                console.error('Error during cache refresh:', error);
+                status.textContent = 'Error during refresh. Please try refreshing the page manually.';
+                status.style.background = 'rgba(244, 67, 54, 0.2)';
+                status.style.color = '#f44336';
+                status.style.display = 'block';
+            }
+        }
+        
+        function openApp() {
+            window.location.href = './index.html';
+        }
+        
+        function delay(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>

@@ -4,6 +4,34 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Braille Writer Simulator</title>
+    <meta name="description" content="A mechanical Braille writer simulator for learning and practicing Braille writing techniques">
+    <meta name="keywords" content="braille, writer, simulator, accessibility, education, tactile, mechanical">
+    <meta name="author" content="Braille Writer Simulator">
+    
+    <!-- PWA Meta Tags -->
+    <meta name="theme-color" content="#ffd700">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BrailleWriter">
+    <meta name="application-name" content="BrailleWriter">
+    <meta name="msapplication-TileColor" content="#ffd700">
+    <meta name="msapplication-TileImage" content="mbw.svg?v=1.0.1">
+    
+    <!-- Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="mbw.svg?v=1.0.1">
+    <link rel="apple-touch-icon" href="mbw.svg?v=1.0.1">
+    <link rel="shortcut icon" href="mbw.svg?v=1.0.1">
+    
+    <!-- Preload critical resources -->
+    <link rel="preload" href="styles.css" as="style">
+    <link rel="preload" href="script.js" as="script">
+    <link rel="preload" href="key.wav" as="audio">
+    <link rel="preload" href="ding.wav" as="audio">
+    
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,9 +52,9 @@
             </div>
             <div class="key-container">
                 <button class="key round-key" id="linespace-btn">LS (a)</button>
-                <button class="key dot-key" id="dot3-btn">3 (s)</button>
-                <button class="key dot-key" id="dot2-btn">2 (d)</button>
                 <button class="key dot-key" id="dot1-btn">1 (f)</button>
+                <button class="key dot-key" id="dot2-btn">2 (d)</button>
+                <button class="key dot-key" id="dot3-btn">3 (s)</button>
                 <button class="key space-key" id="space-btn">Space (G/H)</button>
                 <button class="key dot-key" id="dot4-btn">4 (j)</button>
                 <button class="key dot-key" id="dot5-btn">5 (k)</button>
