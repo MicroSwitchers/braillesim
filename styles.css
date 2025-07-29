@@ -445,6 +445,25 @@ body {
     }
 }
 
+/* Dancing animation for fullscreen button */
+@keyframes danceButton {
+    0% { 
+        transform: scale(1) rotate(0deg);
+    }
+    25% { 
+        transform: scale(1.05) rotate(-2deg);
+    }
+    50% { 
+        transform: scale(1.1) rotate(2deg);
+    }
+    75% { 
+        transform: scale(1.05) rotate(-1deg);
+    }
+    100% { 
+        transform: scale(1) rotate(0deg);
+    }
+}
+
 .slider-container {
     margin-bottom: 24px;
     padding: 14px 32px 14px 20px;
@@ -1056,15 +1075,37 @@ input[type="checkbox"] {
 
 /* Enhanced touch feedback for buttons */
 .key.touch-active, .small-button.touch-active {
-    background: linear-gradient(135deg, #fff 0%, #f5f5f5 50%, #e8e8e8 100%);
+    background: linear-gradient(135deg, #fff 0%, #f5f5f5 50%, #e8e8e8 100%) !important;
+    transform: translate(0em, 0.5em) !important;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.4),
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4) !important;
 }
 
 .key.touch-active::before, .small-button.touch-active::before {
     box-shadow: 
         0 0 0 1px rgba(180, 180, 180, 0.8), 
         0 0px 0 0 #2e2e2e,
-        0 0px 4px rgba(0, 0, 0, 0.4);
-    transform: translate3d(0, 0px, -1em);
+        0 0px 4px rgba(0, 0, 0, 0.4) !important;
+    transform: translate3d(0, 0px, -1em) !important;
+}
+
+/* Add visual feedback for touch detection */
+.key:active, .small-button:active {
+    background: linear-gradient(135deg, #fff 0%, #f5f5f5 50%, #e8e8e8 100%) !important;
+    transform: translate(0em, 0.5em) !important;
+}
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+    .key, .small-button {
+        -webkit-tap-highlight-color: rgba(255, 215, 0, 0.3);
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        touch-action: manipulation;
+    }
 }
 
 /* Prevent text selection on touch */
@@ -1234,6 +1275,18 @@ input[type="checkbox"] {
 .small-button.active::before {
     box-shadow: 0 0 0 2px #ffd700, 0 0 #1a1a1a;
     transform: translate3d(0, 0, -1em);
+}
+
+/* Dancing fullscreen button when not in fullscreen */
+#fullscreen-btn:not(.in-fullscreen) {
+    animation: danceButton 0.6s ease-in-out;
+    animation-delay: 3s;
+    animation-iteration-count: 1;
+}
+
+/* Re-trigger the dance animation periodically */
+#fullscreen-btn:not(.in-fullscreen).dance {
+    animation: danceButton 0.6s ease-in-out;
 }
 
 /* Touch active state */

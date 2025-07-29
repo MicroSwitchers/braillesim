@@ -280,6 +280,19 @@ function handleAction(action) {
     }
 }
 
+// Direct action functions for touch events
+function insertSpace() {
+    handleAction('space');
+}
+
+function linespace() {
+    handleAction('linespace');
+}
+
+function backspace() {
+    handleAction('backspace');
+}
+
 function rotateSlider() {
     clearTimeout(sliderTimeout);
     slider.classList.add('rotated');
@@ -464,13 +477,25 @@ allClearBtn.addEventListener('click', () => {
 // Add touch support for all clear button
 allClearBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     allClearBtn.classList.add('touch-active');
+    console.log('All Clear touch start'); // Debug
 }, { passive: false });
 
 allClearBtn.addEventListener('touchend', (e) => {
     e.preventDefault();
+    e.stopPropagation();
     allClearBtn.classList.remove('touch-active');
-    allClearBtn.click();
+    console.log('All Clear touch end'); // Debug
+    
+    // Direct action
+    grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+    renderBrailleGrid();
+    
+    // Backup click
+    setTimeout(() => {
+        allClearBtn.click();
+    }, 10);
 }, { passive: false });
 
 slider.addEventListener('input', (e) => {
@@ -481,39 +506,119 @@ slider.addEventListener('input', (e) => {
     checkBellWarning();
 });
 
+// Debug function for touch events
+function debugTouch(element, eventType) {
+    console.log(`Touch ${eventType} on ${element.id || element.className}`);
+    
+    // Add visual indicator
+    if (eventType === 'start') {
+        element.style.backgroundColor = '#ff6b6b';
+    } else if (eventType === 'end') {
+        setTimeout(() => {
+            element.style.backgroundColor = '';
+        }, 100);
+    }
+}
+
 // Event listeners for dot buttons
 const dotButtons = [dot1Btn, dot2Btn, dot3Btn, dot4Btn, dot5Btn, dot6Btn];
 dotButtons.forEach((btn, index) => {
+    // Mouse events
     btn.addEventListener('mousedown', () => handleDotButtonClick(index));
     btn.addEventListener('mouseup', handleDotButtonRelease);
     btn.addEventListener('mouseleave', handleDotButtonRelease);
+    
+    // Click event as backup for touch
+    btn.addEventListener('click', (e) => {
+        console.log(`Dot button ${index} clicked, detail: ${e.detail}`);
+        if (e.detail === 0) { // Programmatic click from touch
+            handleDotButtonClick(index);
+            setTimeout(() => handleDotButtonRelease(), 100);
+        }
+    });
+    
+    // Touch events - multiple approaches
     btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
-        handleTouchStart(e);
+        e.stopPropagation();
+        debugTouch(btn, 'start');
+        btn.classList.add('touch-active');
+        
+        // Direct function call
         handleDotButtonClick(index);
+        
+        console.log(`Dot ${index} touch start`);
     }, { passive: false });
+    
     btn.addEventListener('touchend', (e) => {
         e.preventDefault();
-        handleTouchEnd(e);
+        e.stopPropagation();
+        debugTouch(btn, 'end');
+        btn.classList.remove('touch-active');
+        
+        // Direct function call
         handleDotButtonRelease();
+        
+        console.log(`Dot ${index} touch end`);
+        
+        // Multiple backup approaches
+        setTimeout(() => {
+            const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                detail: 0
+            });
+            btn.dispatchEvent(clickEvent);
+        }, 10);
+        
+        setTimeout(() => {
+            btn.click();
+        }, 20);
     }, { passive: false });
+    
     btn.addEventListener('touchcancel', (e) => {
         e.preventDefault();
-        handleTouchCancel(e);
+        e.stopPropagation();
+        btn.classList.remove('touch-active');
         handleDotButtonRelease();
+        console.log(`Dot ${index} touch cancel`);
     }, { passive: false });
 });
 
 // Event listeners for other buttons
 [spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
-    btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+    // Add touch support with direct function calls
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.add('touch-active');
+    }, { passive: false });
+    
     btn.addEventListener('touchend', (e) => {
         e.preventDefault();
-        handleTouchEnd(e);
-        // Trigger the button's click action on touch
-        btn.click();
+        e.stopPropagation();
+        btn.classList.remove('touch-active');
+        
+        // Call the appropriate function directly
+        if (btn === spaceBtn) {
+            insertSpace();
+        } else if (btn === linespaceBtn) {
+            linespace();
+        } else if (btn === backspaceBtn) {
+            backspace();
+        }
+        
+        // Also trigger click as backup
+        setTimeout(() => {
+            btn.click();
+        }, 10);
     }, { passive: false });
-    btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+    
+    btn.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        btn.classList.remove('touch-active');
+    }, { passive: false });
 });
 
 spaceBtn.addEventListener('click', () => {
@@ -667,6 +772,7 @@ function setupFullscreenHandler() {
                 appElement.requestFullscreen().then(() => {
                     isFullscreen = true;
                     fullscreenBtn.classList.add('active');
+                    fullscreenBtn.classList.add('in-fullscreen');
                     fullscreenBtn.textContent = 'Exit Full Screen';
                     appElement.classList.add('fullscreen-mode');
                 }).catch((err) => {
@@ -677,6 +783,7 @@ function setupFullscreenHandler() {
                 document.exitFullscreen().then(() => {
                     isFullscreen = false;
                     fullscreenBtn.classList.remove('active');
+                    fullscreenBtn.classList.remove('in-fullscreen');
                     fullscreenBtn.textContent = 'Full Screen';
                     appElement.classList.remove('fullscreen-mode');
                 }).catch((err) => {
@@ -701,6 +808,56 @@ function setupFullscreenHandler() {
         fullscreenBtn.classList.remove('touch-active');
         fullscreenBtn.click();
     }, { passive: false });
+}
+
+// Setup fullscreen button dancing animation
+function setupFullscreenDanceAnimation() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    let danceInterval;
+
+    function triggerDance() {
+        // Only dance if not in fullscreen
+        if (!isFullscreen && !document.fullscreenElement) {
+            fullscreenBtn.classList.remove('dance');
+            // Force reflow to restart animation
+            fullscreenBtn.offsetHeight;
+            fullscreenBtn.classList.add('dance');
+        }
+    }
+
+    function startDanceTimer() {
+        // Clear any existing timer
+        if (danceInterval) {
+            clearInterval(danceInterval);
+        }
+        
+        // Start dancing every 4 seconds if not in fullscreen
+        danceInterval = setInterval(() => {
+            triggerDance();
+        }, 4000);
+        
+        // Initial dance after 3 seconds
+        setTimeout(triggerDance, 3000);
+    }
+
+    function stopDanceTimer() {
+        if (danceInterval) {
+            clearInterval(danceInterval);
+        }
+        fullscreenBtn.classList.remove('dance');
+    }
+
+    // Listen for fullscreen changes
+    document.addEventListener('fullscreenchange', () => {
+        if (document.fullscreenElement) {
+            stopDanceTimer();
+        } else {
+            startDanceTimer();
+        }
+    });
+
+    // Start the dance timer initially
+    startDanceTimer();
 }
 
 // Handle fullscreen changes
@@ -746,6 +903,7 @@ function initialize() {
     setupSettingsControls();
     setupToggleButtons();
     setupFullscreenHandler();
+    setupFullscreenDanceAnimation();
     setupInstructionsDrawer();
     
     console.log("Initialization completed successfully!");
