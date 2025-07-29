@@ -202,21 +202,46 @@ const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
 const toggleBell = document.getElementById('toggle-bell');
 const toggleKeySound = document.getElementById('toggle-key-sound');
-const dingSound = new Audio('ding.wav');
-const keySound = new Audio('key.wav');
-const volumeControl = document.getElementById('volume-control');
 
-// Set initial volume to a much lower value (5% of max volume)
-dingSound.volume = 0.05;
-keySound.volume = 0.05;
+// Optimized audio system with preloaded sounds for better performance
+const audioPool = {
+    ding: [],
+    key: []
+};
+
+// Create audio pools for smooth playback
+function initializeAudioPool() {
+    // Create multiple instances for overlapping sounds
+    for (let i = 0; i < 3; i++) {
+        const dingAudio = new Audio('ding.wav');
+        const keyAudio = new Audio('key.wav');
+        
+        dingAudio.volume = 0.05;
+        keyAudio.volume = 0.05;
+        
+        // Preload audio
+        dingAudio.load();
+        keyAudio.load();
+        
+        audioPool.ding.push(dingAudio);
+        audioPool.key.push(keyAudio);
+    }
+}
+
+// Initialize audio pool immediately
+initializeAudioPool();
+
+const volumeControl = document.getElementById('volume-control');
 
 // Update the initial value of the volume control slider
 volumeControl.value = 5;
 
 function updateVolume() {
     const volume = volumeControl.value / 100;
-    dingSound.volume = volume;
-    keySound.volume = volume;
+    
+    // Update all audio instances in pool
+    audioPool.ding.forEach(audio => audio.volume = volume);
+    audioPool.key.forEach(audio => audio.volume = volume);
 }
 
 volumeControl.addEventListener('input', updateVolume);
@@ -224,12 +249,17 @@ volumeControl.addEventListener('input', updateVolume);
 // Call this function once to set initial volume
 updateVolume();
 
-// Add this to prevent potential audio issues
-function playSoundSafely(audioElement) {
-    // Clone and play to allow overlapping sounds
-    const soundClone = audioElement.cloneNode();
-    soundClone.volume = audioElement.volume;
-    soundClone.play().catch(err => console.log("Audio play prevented:", err));
+// Optimized sound playing with pooling
+function playSoundSafely(soundType) {
+    if (!audioPool[soundType] || audioPool[soundType].length === 0) return;
+    
+    // Find an available audio instance
+    const availableAudio = audioPool[soundType].find(audio => audio.paused || audio.ended);
+    const audioToPlay = availableAudio || audioPool[soundType][0];
+    
+    // Reset and play
+    audioToPlay.currentTime = 0;
+    audioToPlay.play().catch(err => console.log("Audio play prevented:", err));
 }
 
 // Button elements
@@ -285,7 +315,7 @@ function checkBellWarning() {
     const warningPosition = COLS - bellWarningSpaces - 1;
     
     if (isBellEnabled && cursor.col === warningPosition && previousBellWarningPosition !== cursor.col) {
-        playSoundSafely(dingSound);
+        playSoundSafely('ding');
         previousBellWarningPosition = cursor.col;
     }
     
@@ -363,7 +393,7 @@ function handleKeyDown(e) {
             renderBrailleGrid();
             // Play sound only once per cluster
             if (isKeySoundEnabled && !clusterSoundPlayed) {
-                playSoundSafely(keySound);
+                playSoundSafely('key');
                 clusterSoundPlayed = true;
             }
         } else if (movementKeys.has(key)) {
@@ -429,7 +459,7 @@ function handleAction(action) {
     if (action === 'linespace') {
         moveCursor(1, 0); // Move down one line
         if (isKeySoundEnabled) {
-            playSoundSafely(keySound);
+            playSoundSafely('key');
         }
     } else if (action === 'up') {
         moveCursor(-1, 0); // Move up one line
@@ -439,13 +469,13 @@ function handleAction(action) {
         if (cursor.col > 0) { // Only backspace if not at beginning of line
             moveCursor(0, -1);
             if (isKeySoundEnabled) {
-                playSoundSafely(keySound);
+                playSoundSafely('key');
             }
         }
     } else if (action === 'space') {
         moveCursor(0, 1); // Move to next cell
         if (isKeySoundEnabled) {
-            playSoundSafely(keySound);
+            playSoundSafely('key');
         }
     }
 }
@@ -479,8 +509,8 @@ function renderBrailleCell(cell, rowIndex, colIndex) {
     const dotContainer = document.createElement('div');
     dotContainer.className = 'braille-dot-container';
 
-    // The dots are ordered in visual order: 1,4,2,5,3,6 which maps to array indices 0,3,1,4,2,5
-    [0, 3, 1, 4, 2, 5].forEach((dotIndex, visualPosition) => {
+    // The dots are ordered in visual order: 1,2,3,4,5,6 which maps to array indices 0,1,2,3,4,5
+    [0, 1, 2, 3, 4, 5].forEach((dotIndex, visualPosition) => {
         const dot = document.createElement('div');
         dot.className = `braille-dot ${cell[dotIndex] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
         
@@ -532,61 +562,78 @@ document.addEventListener('mousedown', handleMouseDown);
 document.addEventListener('mouseup', handleMouseUp);
 
 function renderBrailleGrid() {
-    // Only create the grid initially if it doesn't exist
-    if (brailleGrid.childElementCount === 0) {
-        for (let i = 0; i < ROWS; i++) {
-            const row = document.createElement('div');
-            row.className = 'braille-row';
+    // Performance optimization: Use requestAnimationFrame for smooth rendering
+    requestAnimationFrame(() => {
+        // Only create the grid initially if it doesn't exist
+        if (brailleGrid.childElementCount === 0) {
+            const fragment = document.createDocumentFragment();
             
-            for (let j = 0; j < COLS; j++) {
-                const cell = renderBrailleCell(grid[i][j], i, j);
-                row.appendChild(cell);
+            for (let i = 0; i < ROWS; i++) {
+                const row = document.createElement('div');
+                row.className = 'braille-row';
+                
+                for (let j = 0; j < COLS; j++) {
+                    const cell = renderBrailleCell(grid[i][j], i, j);
+                    row.appendChild(cell);
+                }
+                
+                fragment.appendChild(row);
             }
             
-            brailleGrid.appendChild(row);
-        }
-    } else {
-        // Update only what needs to change - cell classes and dot states
-        const rows = brailleGrid.children;
-        
-        for (let i = 0; i < ROWS; i++) {
-            const rowElement = rows[i];
-            const cells = rowElement.children;
+            brailleGrid.appendChild(fragment);
+        } else {
+            // Optimized update: only change what's necessary
+            const rows = brailleGrid.children;
             
-            for (let j = 0; j < COLS; j++) {
-                const cellElement = cells[j];
-                const isCurrentCell = i === cursor.row && j === cursor.col;
+            for (let i = 0; i < ROWS; i++) {
+                const rowElement = rows[i];
+                const cells = rowElement.children;
                 
-                // Update current cell class
-                cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
-                
-                // Update dot states
-                const dotContainer = cellElement.querySelector('.braille-dot-container');
-                const dots = dotContainer.children;
-                const dotOrder = [0, 3, 1, 4, 2, 5]; // Visual order mapping
-                
-                for (let k = 0; k < 6; k++) {
-                    const dot = dots[k];
-                    const dotIndex = dotOrder[k];
-                    const isActive = grid[i][j][dotIndex] === 1;
+                for (let j = 0; j < COLS; j++) {
+                    const cellElement = cells[j];
+                    const isCurrentCell = i === cursor.row && j === cursor.col;
                     
-                    dot.className = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+                    // Update current cell class only if changed
+                    const shouldHaveCurrentClass = isCurrentCell;
+                    const hasCurrentClass = cellElement.classList.contains('current-cell');
+                    
+                    if (shouldHaveCurrentClass !== hasCurrentClass) {
+                        cellElement.className = `braille-cell ${isCurrentCell ? 'current-cell' : ''}`;
+                    }
+                    
+                    // Update dot states efficiently
+                    const dotContainer = cellElement.querySelector('.braille-dot-container');
+                    const dots = dotContainer.children;
+                    
+                    for (let k = 0; k < 6; k++) {
+                        const dot = dots[k];
+                        const isActive = grid[i][j][k] === 1;
+                        const currentClass = dot.className;
+                        const expectedClass = `braille-dot ${isActive ? 'braille-dot-active' : 'braille-dot-inactive'}`;
+                        
+                        if (currentClass !== expectedClass) {
+                            dot.className = expectedClass;
+                        }
+                    }
                 }
             }
         }
-    }
-    
-    // Scroll to make cursor visible
-    requestAnimationFrame(() => {
-        const currentCell = brailleGrid.querySelector('.current-cell');
-        if (currentCell) {
-            currentCell.scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'nearest',
-                inline: 'nearest'
-            });
-        }
+        
+        // Scroll to make cursor visible
+        scrollToCursor();
     });
+}
+
+// Optimized cursor scrolling function
+function scrollToCursor() {
+    const currentCell = brailleGrid.querySelector('.current-cell');
+    if (currentCell) {
+        currentCell.scrollIntoView({ 
+            behavior: 'smooth', 
+            block: 'nearest',
+            inline: 'nearest'
+        });
+    }
 }
 
 // Function to handle dot button clicks
@@ -1296,45 +1343,46 @@ function syncOfflineData() {
     }
 }
 
-// Load saved data
+// Load saved data - removed session restore prompt
 function loadSavedData() {
-    try {
-        const savedData = localStorage.getItem('braille-writer-data');
-        if (savedData) {
-            const data = JSON.parse(savedData);
-            if (data.grid && data.cursor) {
-                // Ask user if they want to restore
-                if (confirm('Restore your previous Braille document?')) {
-                    grid = data.grid;
-                    cursor = data.cursor;
-                    updateCellCount();
-                    slider.value = cursor.col;
-                    renderBrailleGrid();
-                    console.log('Previous session restored');
-                }
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to load saved data:', error);
-    }
+    // Session restore removed for better performance
+    // App now starts fresh every time
 }
 
-// Auto-save functionality
+// Optimized auto-save functionality
 function setupAutoSave() {
     let saveTimeout;
+    let hasChanges = false;
     
     function autoSave() {
+        if (!hasChanges) return; // Skip if no changes
+        
         clearTimeout(saveTimeout);
         saveTimeout = setTimeout(() => {
             syncOfflineData();
-        }, 2000); // Save 2 seconds after last change
+            hasChanges = false;
+        }, 5000); // Increased from 2s to 5s for better performance
     }
     
-    // Monitor changes to grid
-    const originalRenderGrid = renderBrailleGrid;
-    renderBrailleGrid = function() {
-        originalRenderGrid.call(this);
+    // Lightweight change detection - only save when necessary
+    function markChanged() {
+        hasChanges = true;
         autoSave();
+    }
+    
+    // Monitor only essential changes
+    const originalEmbossDot = embossDot;
+    embossDot = function(...args) {
+        const result = originalEmbossDot.apply(this, args);
+        markChanged();
+        return result;
+    };
+    
+    const originalInsertSpace = insertSpace;
+    insertSpace = function(...args) {
+        const result = originalInsertSpace.apply(this, args);
+        markChanged();
+        return result;
     };
 }
 
@@ -1362,7 +1410,7 @@ function handleAppShortcuts() {
     }
 }
 
-// Check cache and version before initialization
+// Optimized initialization - no delays for better performance
 if (checkAndClearCache()) {
     // Call initialization only if cache check passes
     initialize();
@@ -1370,12 +1418,10 @@ if (checkAndClearCache()) {
     // Initialize PWA features
     initializePWA();
     
-    // Load saved data after initialization
-    setTimeout(() => {
-        loadSavedData();
+    // Load saved data and setup features immediately
+    loadSavedData();
     setupAutoSave();
     handleAppShortcuts();
-}, 1000);
 } // End cache check
 
 // Clean up on page unload
