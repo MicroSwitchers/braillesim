@@ -21,6 +21,294 @@ let isDragging = false;
 let isMouseDown = false;
 let movementInterval = null;
 let sliderTimeout = null;
+// Comprehensive Mobile Touch Support - Version 2.0
+// Simplified and more reliable approach for mobile touch devices
+
+// Touch state tracking
+let touchStartTime = 0;
+let touchStartElement = null;
+let isTouchDevice = false;
+
+// Detect if this is a touch device
+function detectTouchDevice() {
+    isTouchDevice = 'ontouchstart' in window || 
+                   navigator.maxTouchPoints > 0 || 
+                   navigator.msMaxTouchPoints > 0;
+    
+    if (isTouchDevice) {
+        console.log('Touch device detected - enabling touch support');
+        document.body.classList.add('touch-device');
+    }
+    return isTouchDevice;
+}
+
+// Enhanced Touch Debugging and Fallback System
+function createTouchDebugPanel() {
+    if (!isTouchDevice) return;
+    
+    const debugPanel = document.createElement('div');
+    debugPanel.id = 'touch-debug-panel';
+    debugPanel.style.cssText = `
+        position: fixed;
+        bottom: 10px;
+        left: 10px;
+        background: rgba(0, 0, 0, 0.8);
+        color: white;
+        padding: 10px;
+        border-radius: 5px;
+        font-size: 12px;
+        z-index: 10001;
+        max-width: 300px;
+        font-family: monospace;
+        pointer-events: none;
+    `;
+    document.body.appendChild(debugPanel);
+    
+    return debugPanel;
+}
+
+function logTouchDebug(message) {
+    console.log(`[TOUCH DEBUG] ${message}`);
+    const debugPanel = document.getElementById('touch-debug-panel');
+    if (debugPanel) {
+        const time = new Date().toLocaleTimeString();
+        debugPanel.innerHTML += `<div>${time}: ${message}</div>`;
+        // Keep only last 5 messages
+        const messages = debugPanel.querySelectorAll('div');
+        if (messages.length > 5) {
+            messages[0].remove();
+        }
+    }
+}
+
+// Additional fallback touch handlers using different approaches
+function setupFallbackTouchHandlers() {
+    if (!isTouchDevice) return;
+    
+    logTouchDebug('Setting up fallback touch handlers');
+    
+    // Approach 1: Document-level touch handling
+    document.addEventListener('touchstart', function(e) {
+        const target = e.target.closest('.key, .small-button');
+        if (target) {
+            logTouchDebug(`Document touch start on ${target.id || target.className}`);
+            target.classList.add('touch-active');
+        }
+    }, { passive: false });
+    
+    document.addEventListener('touchend', function(e) {
+        const target = e.target.closest('.key, .small-button');
+        if (target) {
+            logTouchDebug(`Document touch end on ${target.id || target.className}`);
+            target.classList.remove('touch-active');
+            
+            // Try to trigger the action
+            const clickEvent = new Event('click', { bubbles: true });
+            target.dispatchEvent(clickEvent);
+        }
+    }, { passive: false });
+    
+    // Approach 2: Pointer events as fallback
+    document.addEventListener('pointerdown', function(e) {
+        if (e.pointerType === 'touch') {
+            const target = e.target.closest('.key, .small-button');
+            if (target) {
+                logTouchDebug(`Pointer down on ${target.id || target.className}`);
+                target.classList.add('touch-active');
+            }
+        }
+    });
+    
+    document.addEventListener('pointerup', function(e) {
+        if (e.pointerType === 'touch') {
+            const target = e.target.closest('.key, .small-button');
+            if (target) {
+                logTouchDebug(`Pointer up on ${target.id || target.className}`);
+                target.classList.remove('touch-active');
+                
+                // Trigger click
+                setTimeout(() => {
+                    target.click();
+                }, 10);
+            }
+        }
+    });
+}
+
+// Universal touch handler for all buttons
+function setupUniversalTouchHandler() {
+    const buttons = [
+        { element: document.getElementById('dot1-btn'), action: () => handleDotButtonClick(0) },
+        { element: document.getElementById('dot2-btn'), action: () => handleDotButtonClick(1) },
+        { element: document.getElementById('dot3-btn'), action: () => handleDotButtonClick(2) },
+        { element: document.getElementById('dot4-btn'), action: () => handleDotButtonClick(3) },
+        { element: document.getElementById('dot5-btn'), action: () => handleDotButtonClick(4) },
+        { element: document.getElementById('dot6-btn'), action: () => handleDotButtonClick(5) },
+        { element: document.getElementById('space-btn'), action: () => insertSpace() },
+        { element: document.getElementById('linespace-btn'), action: () => linespace() },
+        { element: document.getElementById('backspace-btn'), action: () => backspace() },
+        { element: document.getElementById('all-clear-btn'), action: () => {
+            grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+            renderBrailleGrid();
+        }},
+        { element: document.getElementById('erase-mode-btn'), action: () => {
+            isEraseMode = !isEraseMode;
+            updateEraseModeButton();
+        }},
+        { element: document.getElementById('fullscreen-btn'), action: () => {
+            const appElement = document.getElementById('braille-writer-app');
+            if (!document.fullscreenElement) {
+                appElement.requestFullscreen().catch(console.error);
+            } else {
+                document.exitFullscreen().catch(console.error);
+            }
+        }}
+    ];
+
+    buttons.forEach(({ element, action }) => {
+        if (!element) return;
+
+        // Clear any existing touch listeners
+        element.removeEventListener('touchstart', () => {});
+        element.removeEventListener('touchend', () => {});
+        element.removeEventListener('touchcancel', () => {});
+
+        // Add new simplified touch handlers
+        element.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            touchStartTime = Date.now();
+            touchStartElement = element;
+            element.classList.add('touch-active');
+            
+            console.log(`Touch start on ${element.id}`);
+            
+            // Visual feedback
+            element.style.transform = 'scale(0.95)';
+            element.style.opacity = '0.8';
+            
+        }, { passive: false });
+
+        element.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const touchDuration = Date.now() - touchStartTime;
+            
+            // Only execute if touch was quick and on the same element
+            if (touchStartElement === element && touchDuration < 1000) {
+                console.log(`Touch end on ${element.id} - executing action`);
+                
+                // Execute the action directly
+                try {
+                    action();
+                    console.log(`Action executed for ${element.id}`);
+                } catch (err) {
+                    console.error(`Error executing action for ${element.id}:`, err);
+                }
+            }
+            
+            // Reset visual state
+            element.classList.remove('touch-active');
+            element.style.transform = '';
+            element.style.opacity = '';
+            
+            touchStartElement = null;
+            touchStartTime = 0;
+            
+        }, { passive: false });
+
+        element.addEventListener('touchcancel', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Reset state on cancel
+            element.classList.remove('touch-active');
+            element.style.transform = '';
+            element.style.opacity = '';
+            
+            touchStartElement = null;
+            touchStartTime = 0;
+            
+            console.log(`Touch cancel on ${element.id}`);
+        }, { passive: false });
+
+        // Add mouse events as fallback (for testing on desktop)
+        if (!isTouchDevice) {
+            element.addEventListener('mousedown', function(e) {
+                element.style.transform = 'scale(0.95)';
+                element.style.opacity = '0.8';
+            });
+            
+            element.addEventListener('mouseup', function(e) {
+                element.style.transform = '';
+                element.style.opacity = '';
+            });
+            
+            element.addEventListener('mouseleave', function(e) {
+                element.style.transform = '';
+                element.style.opacity = '';
+            });
+        }
+    });
+}
+
+// Emergency fallback: Inline touch handlers
+function setupInlineTouchHandlers() {
+    if (!isTouchDevice) return;
+    
+    logTouchDebug('Setting up inline touch handlers as emergency fallback');
+    
+    const buttonMappings = {
+        'dot1-btn': () => { handleDotButtonClick(0); handleDotButtonRelease(); },
+        'dot2-btn': () => { handleDotButtonClick(1); handleDotButtonRelease(); },
+        'dot3-btn': () => { handleDotButtonClick(2); handleDotButtonRelease(); },
+        'dot4-btn': () => { handleDotButtonClick(3); handleDotButtonRelease(); },
+        'dot5-btn': () => { handleDotButtonClick(4); handleDotButtonRelease(); },
+        'dot6-btn': () => { handleDotButtonClick(5); handleDotButtonRelease(); },
+        'space-btn': () => insertSpace(),
+        'linespace-btn': () => linespace(),
+        'backspace-btn': () => backspace(),
+        'all-clear-btn': () => {
+            grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+            renderBrailleGrid();
+        },
+        'erase-mode-btn': () => {
+            isEraseMode = !isEraseMode;
+            updateEraseModeButton();
+        },
+        'fullscreen-btn': () => {
+            const appElement = document.getElementById('braille-writer-app');
+            if (!document.fullscreenElement) {
+                appElement.requestFullscreen().catch(console.error);
+            } else {
+                document.exitFullscreen().catch(console.error);
+            }
+        }
+    };
+    
+    Object.keys(buttonMappings).forEach(buttonId => {
+        const button = document.getElementById(buttonId);
+        if (button) {
+            // Add onclick as absolute fallback
+            button.onclick = function(e) {
+                e.preventDefault();
+                logTouchDebug(`Inline click handler executed for ${buttonId}`);
+                buttonMappings[buttonId]();
+            };
+            
+            // Also add ontouchend
+            button.ontouchend = function(e) {
+                e.preventDefault();
+                logTouchDebug(`Inline touch handler executed for ${buttonId}`);
+                buttonMappings[buttonId]();
+            };
+        }
+    });
+}
+
+// Legacy touch functions (keeping for compatibility)
 let activeTouches = new Set();
 let bellWarningSpaces = 7;  // Default to 7 spaces before end of line
 let previousBellWarningPosition = -1;
@@ -900,6 +1188,14 @@ function initialize() {
     });
     
     // Set up all components
+    detectTouchDevice();
+    if (isTouchDevice) {
+        createTouchDebugPanel();
+        logTouchDebug('Touch device detected, initializing touch support');
+    }
+    setupUniversalTouchHandler();
+    setupFallbackTouchHandlers();
+    setupInlineTouchHandlers();
     setupSettingsControls();
     setupToggleButtons();
     setupFullscreenHandler();
