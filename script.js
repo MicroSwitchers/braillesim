@@ -461,6 +461,18 @@ allClearBtn.addEventListener('click', () => {
     renderBrailleGrid();
 });
 
+// Add touch support for all clear button
+allClearBtn.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    allClearBtn.classList.add('touch-active');
+}, { passive: false });
+
+allClearBtn.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    allClearBtn.classList.remove('touch-active');
+    allClearBtn.click();
+}, { passive: false });
+
 slider.addEventListener('input', (e) => {
     cursor.col = parseInt(e.target.value);
     updateCellCount();
@@ -475,14 +487,33 @@ dotButtons.forEach((btn, index) => {
     btn.addEventListener('mousedown', () => handleDotButtonClick(index));
     btn.addEventListener('mouseup', handleDotButtonRelease);
     btn.addEventListener('mouseleave', handleDotButtonRelease);
-    btn.addEventListener('touchstart', handleTouchStart, { passive: false });
-    btn.addEventListener('touchend', handleTouchEnd, { passive: false });
-    btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
+    btn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleTouchStart(e);
+        handleDotButtonClick(index);
+    }, { passive: false });
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleTouchEnd(e);
+        handleDotButtonRelease();
+    }, { passive: false });
+    btn.addEventListener('touchcancel', (e) => {
+        e.preventDefault();
+        handleTouchCancel(e);
+        handleDotButtonRelease();
+    }, { passive: false });
 });
 
 // Event listeners for other buttons
 [spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
     btn.addEventListener('touchstart', handleTouchStart, { passive: false });
+    btn.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleTouchEnd(e);
+        // Trigger the button's click action on touch
+        btn.click();
+    }, { passive: false });
+    btn.addEventListener('touchcancel', handleTouchCancel, { passive: false });
 });
 
 spaceBtn.addEventListener('click', () => {

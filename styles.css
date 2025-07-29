@@ -229,6 +229,32 @@ body {
         justify-content: center;
         gap: 6px;
         padding: 14px 2px; /* Further reduced horizontal padding */
+        position: relative;
+    }
+    
+    /* Portrait mode guidance for small screens */
+    @media (orientation: portrait) and (max-height: 500px) {
+        .key-container::before {
+            content: "📱 Rotate to landscape for better touch experience";
+            position: absolute;
+            top: -35px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 215, 0, 0.95);
+            color: #000;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 1000;
+            animation: fadeInOut 4s ease-in-out;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .key-container {
+            margin-top: 40px;
+        }
     }
 }
 
@@ -396,6 +422,26 @@ body {
     100% { 
         opacity: 0.6;
         transform: scale(1);
+    }
+}
+
+/* Fade in/out animation for orientation guidance */
+@keyframes fadeInOut {
+    0% { 
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
+    }
+    15% { 
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    85% { 
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    100% { 
+        opacity: 0;
+        transform: translateX(-50%) translateY(-10px);
     }
 }
 
@@ -1002,6 +1048,23 @@ input[type="checkbox"] {
 .key:active, .small-button:active, .key.touch-active, .small-button.touch-active {
     opacity: 0.9;
     transform: translate(0em, 0.5em) !important;
+    box-shadow: 
+        0 2px 4px rgba(0, 0, 0, 0.4),
+        0 1px 2px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* Enhanced touch feedback for buttons */
+.key.touch-active, .small-button.touch-active {
+    background: linear-gradient(135deg, #fff 0%, #f5f5f5 50%, #e8e8e8 100%);
+}
+
+.key.touch-active::before, .small-button.touch-active::before {
+    box-shadow: 
+        0 0 0 1px rgba(180, 180, 180, 0.8), 
+        0 0px 0 0 #2e2e2e,
+        0 0px 4px rgba(0, 0, 0, 0.4);
+    transform: translate3d(0, 0px, -1em);
 }
 
 /* Prevent text selection on touch */

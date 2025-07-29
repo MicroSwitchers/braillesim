@@ -84,13 +84,34 @@ A comprehensive, accessible web-based simulator of a mechanical Braille writer, 
 - **Web App Manifest**: Native app-like experience
 - **Web Audio API**: Realistic sound effects
 
+### Browser Compatibility
+- Chrome 80+ ✅
+- Firefox 75+ ✅
+- Safari 13+ ✅
+- Edge 80+ ✅
+- Mobile browsers ✅
+
+### Performance Features
+- Lightweight codebase (< 1MB total)
+- Efficient caching strategies
+- Hardware-accelerated animations
+- Optimized for touch devices
+
 ## 📱 Mobile Experience
 
 ### Touch Optimization
-- Large touch targets for easy interaction
-- Gesture-friendly interface
-- Portrait and landscape support
-- Virtual keyboard integration
+- **Full touch support**: All buttons and keys work with touch input
+- **Large touch targets**: Optimized button sizes for easy interaction
+- **Gesture-friendly interface**: Smooth touch responses and feedback
+- **Landscape orientation recommended**: For best touch key experience on small screens
+- **Portrait and landscape support**: Automatic layout adjustments
+- **Virtual keyboard integration**: Works alongside device keyboards
+
+### Mobile Usage Tips
+- **Rotate to landscape**: For optimal touch key layout on phones/tablets
+- **Use full screen mode**: Maximizes available space for touch keys
+- **Touch feedback**: Visual and haptic feedback for button presses
+- **Orientation guidance**: Automatic suggestions for best viewing mode
 
 ### Accessibility Features
 - Screen reader compatible
@@ -109,6 +130,19 @@ A comprehensive, accessible web-based simulator of a mechanical Braille writer, 
 - **Full Screen Mode**: Distraction-free writing
 - **Cursor Visibility**: Bright position indicator
 - **Responsive Layout**: Adapts to screen size
+
+## 🔧 Installation & Setup
+
+### Local Development
+```bash
+# Clone or download the project files
+# No build process required - pure HTML/CSS/JS
+
+# Serve locally (optional)
+python -m http.server 8000
+# or
+npx serve .
+```
 
 ### File Structure
 ```
@@ -143,10 +177,29 @@ We welcome contributions to improve the Braille Writer Simulator:
 
 This project is open source and available under the MIT License.
 
+## 🆘 Support
+
+### Common Issues
+- **Sound not working**: Check browser audio permissions
+- **PWA not installing**: Ensure HTTPS connection
+- **Keys not responding**: Check focus on app container
+
+### Getting Help
+- Check the Instructions & Settings panel
+- Review keyboard control reference
+- Test in different browsers
+- Clear browser cache if needed
+
+## 🎉 Acknowledgments
+
+- Inspired by traditional mechanical Braille writers
+- Designed for accessibility and education
+- Built with modern web standards
+- Optimized for all users and devices
 
 ---
 
 
 *Experience the authentic feel of mechanical Braille writing in your browser!*
 
-App by Niall Brown - Early Childhood Vision Consultnat
+App by Niall Brown (ECVC)
