@@ -1,3 +1,148 @@
+// App version and cache management
+const APP_VERSION = '2.1.0';
+const CACHE_KEY = 'braille-writer-version';
+
+// Force cache clearing for new versions
+function checkAndClearCache() {
+    const storedVersion = localStorage.getItem(CACHE_KEY);
+    
+    if (storedVersion !== APP_VERSION) {
+        console.log(`Version change detected: ${storedVersion} -> ${APP_VERSION}`);
+        
+        // Clear various storage types
+        try {
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Clear IndexedDB if available
+            if ('indexedDB' in window) {
+                indexedDB.databases().then(databases => {
+                    databases.forEach(db => {
+                        indexedDB.deleteDatabase(db.name);
+                    });
+                });
+            }
+            
+            // Unregister service workers
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    registrations.forEach(registration => {
+                        registration.unregister();
+                        console.log('Service worker unregistered');
+                    });
+                });
+            }
+            
+            // Clear application cache (deprecated but some browsers still use it)
+            if ('applicationCache' in window) {
+                window.applicationCache.update();
+            }
+            
+            console.log('Cache cleared for new version');
+        } catch (e) {
+            console.log('Cache clearing failed:', e);
+        }
+        
+        // Store new version
+        localStorage.setItem(CACHE_KEY, APP_VERSION);
+        
+        // Add visible notification
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 0, 0, 0.9);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            z-index: 99999;
+            font-size: 16px;
+            text-align: center;
+        `;
+        notification.innerHTML = `
+            <h3>App Updated!</h3>
+            <p>Cache cleared for version ${APP_VERSION}</p>
+            <p>Reloading in 2 seconds...</p>
+        `;
+        document.body.appendChild(notification);
+        
+        // Force reload if this isn't the first load
+        if (storedVersion) {
+            console.log('Forcing page reload for new version...');
+            setTimeout(() => {
+                window.location.reload(true);
+            }, 2000);
+            return false; // Prevent normal initialization
+        } else {
+            // Remove notification after 3 seconds for first load
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+    }
+    
+    return true; // Continue with normal initialization
+}
+
+// Force reload function for manual cache clearing
+function forceCacheClear() {
+    localStorage.removeItem(CACHE_KEY);
+    
+    // Clear all storage
+    try {
+        localStorage.clear();
+        sessionStorage.clear();
+        
+        // Clear IndexedDB if available
+        if ('indexedDB' in window) {
+            indexedDB.databases().then(databases => {
+                databases.forEach(db => {
+                    indexedDB.deleteDatabase(db.name);
+                });
+            });
+        }
+        
+        // Unregister service workers
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(registrations => {
+                registrations.forEach(registration => {
+                    registration.unregister();
+                });
+            });
+        }
+    } catch (e) {
+        console.log('Manual cache clearing failed:', e);
+    }
+    
+    // Show notification and reload
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 255, 0, 0.9);
+        color: black;
+        padding: 20px;
+        border-radius: 10px;
+        z-index: 99999;
+        font-size: 16px;
+        text-align: center;
+    `;
+    notification.innerHTML = `
+        <h3>Cache Cleared!</h3>
+        <p>Reloading fresh version...</p>
+    `;
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        window.location.reload(true);
+    }, 1500);
+}
+
+// Application Constants and Global Variables
 const ROWS = 20;
 const COLS = 31;  // Increased from 27 to 31
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
@@ -1217,18 +1362,21 @@ function handleAppShortcuts() {
     }
 }
 
-// Call initialization once
-initialize();
-
-// Initialize PWA features
-initializePWA();
-
-// Load saved data after initialization
-setTimeout(() => {
-    loadSavedData();
+// Check cache and version before initialization
+if (checkAndClearCache()) {
+    // Call initialization only if cache check passes
+    initialize();
+    
+    // Initialize PWA features
+    initializePWA();
+    
+    // Load saved data after initialization
+    setTimeout(() => {
+        loadSavedData();
     setupAutoSave();
     handleAppShortcuts();
 }, 1000);
+} // End cache check
 
 // Clean up on page unload
 window.addEventListener('beforeunload', (e) => {
