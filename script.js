@@ -15,6 +15,7 @@ let grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () =>
 let cursor = { row: 0, col: 0 };
 let activeKeys = new Set();
 let clusterKeys = new Set(); // Track all keys that were part of current cluster
+let clusterSoundPlayed = false; // Track if sound has been played for current cluster
 let isEraseMode = false;
 let isFullscreen = false;
 let isDragging = false;
@@ -36,442 +37,10 @@ function detectTouchDevice() {
                    navigator.msMaxTouchPoints > 0;
     
     if (isTouchDevice) {
-        console.log('Touch device detected - enabling touch support');
+        console.log('Touch device detected - using optimized touch support');
         document.body.classList.add('touch-device');
-        
-        // Add immediate visual indicator
-        const indicator = document.createElement('div');
-        indicator.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: lime;
-            color: black;
-            padding: 10px;
-            border-radius: 5px;
-            font-weight: bold;
-            z-index: 99999;
-            font-size: 14px;
-        `;
-        indicator.textContent = 'TOUCH DEVICE DETECTED';
-        document.body.appendChild(indicator);
-        
-        // Add touch test area
-        const touchTest = document.createElement('div');
-        touchTest.id = 'touch-test';
-        touchTest.style.cssText = `
-            position: fixed;
-            top: 60px;
-            left: 10px;
-            width: 100px;
-            height: 50px;
-            background: red;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            border-radius: 5px;
-            z-index: 99999;
-        `;
-        touchTest.textContent = 'TOUCH TEST';
-        document.body.appendChild(touchTest);
-        
-        // Basic touch test
-        touchTest.ontouchstart = function() {
-            this.style.background = 'green';
-            this.textContent = 'TOUCH WORKS!';
-        };
     }
     return isTouchDevice;
-}
-
-// Enhanced Touch Debugging and Fallback System
-function createTouchDebugPanel() {
-    if (!isTouchDevice) return;
-    
-    const debugPanel = document.createElement('div');
-    debugPanel.id = 'touch-debug-panel';
-    debugPanel.style.cssText = `
-        position: fixed;
-        bottom: 10px;
-        left: 10px;
-        background: rgba(0, 0, 0, 0.8);
-        color: white;
-        padding: 10px;
-        border-radius: 5px;
-        font-size: 12px;
-        z-index: 10001;
-        max-width: 300px;
-        font-family: monospace;
-        pointer-events: none;
-    `;
-    document.body.appendChild(debugPanel);
-    
-    return debugPanel;
-}
-
-function logTouchDebug(message) {
-    console.log(`[TOUCH DEBUG] ${message}`);
-    const debugPanel = document.getElementById('touch-debug-panel');
-    if (debugPanel) {
-        const time = new Date().toLocaleTimeString();
-        debugPanel.innerHTML += `<div>${time}: ${message}</div>`;
-        // Keep only last 5 messages
-        const messages = debugPanel.querySelectorAll('div');
-        if (messages.length > 5) {
-            messages[0].remove();
-        }
-    }
-}
-
-// Additional fallback touch handlers using different approaches
-function setupFallbackTouchHandlers() {
-    if (!isTouchDevice) return;
-    
-    logTouchDebug('Setting up fallback touch handlers');
-    
-    // Approach 1: Document-level touch handling
-    document.addEventListener('touchstart', function(e) {
-        const target = e.target.closest('.key, .small-button');
-        if (target) {
-            logTouchDebug(`Document touch start on ${target.id || target.className}`);
-            target.classList.add('touch-active');
-        }
-    }, { passive: false });
-    
-    document.addEventListener('touchend', function(e) {
-        const target = e.target.closest('.key, .small-button');
-        if (target) {
-            logTouchDebug(`Document touch end on ${target.id || target.className}`);
-            target.classList.remove('touch-active');
-            
-            // Try to trigger the action
-            const clickEvent = new Event('click', { bubbles: true });
-            target.dispatchEvent(clickEvent);
-        }
-    }, { passive: false });
-    
-    // Approach 2: Pointer events as fallback
-    document.addEventListener('pointerdown', function(e) {
-        if (e.pointerType === 'touch') {
-            const target = e.target.closest('.key, .small-button');
-            if (target) {
-                logTouchDebug(`Pointer down on ${target.id || target.className}`);
-                target.classList.add('touch-active');
-            }
-        }
-    });
-    
-    document.addEventListener('pointerup', function(e) {
-        if (e.pointerType === 'touch') {
-            const target = e.target.closest('.key, .small-button');
-            if (target) {
-                logTouchDebug(`Pointer up on ${target.id || target.className}`);
-                target.classList.remove('touch-active');
-                
-                // Trigger click
-                setTimeout(() => {
-                    target.click();
-                }, 10);
-            }
-        }
-    });
-}
-
-// SIMPLE DIRECT TOUCH HANDLER - No event listeners, just direct properties
-function setupSimpleTouchHandlers() {
-    if (!isTouchDevice) return;
-    
-    console.log('Setting up SIMPLE touch handlers');
-    
-    // Get all buttons
-    const buttons = {
-        dot1: document.getElementById('dot1-btn'),
-        dot2: document.getElementById('dot2-btn'),
-        dot3: document.getElementById('dot3-btn'),
-        dot4: document.getElementById('dot4-btn'),
-        dot5: document.getElementById('dot5-btn'),
-        dot6: document.getElementById('dot6-btn'),
-        space: document.getElementById('space-btn'),
-        linespace: document.getElementById('linespace-btn'),
-        backspace: document.getElementById('backspace-btn'),
-        allClear: document.getElementById('all-clear-btn'),
-        eraseMode: document.getElementById('erase-mode-btn'),
-        fullscreen: document.getElementById('fullscreen-btn')
-    };
-    
-    // Direct touch handlers using ontouchstart property
-    if (buttons.dot1) {
-        buttons.dot1.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(0);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot1.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.dot2) {
-        buttons.dot2.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(1);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot2.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.dot3) {
-        buttons.dot3.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(2);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot3.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.dot4) {
-        buttons.dot4.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(3);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot4.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.dot5) {
-        buttons.dot5.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(4);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot5.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.dot6) {
-        buttons.dot6.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            handleDotButtonClick(5);
-            setTimeout(() => handleDotButtonRelease(), 100);
-        };
-        buttons.dot6.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.space) {
-        buttons.space.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            insertSpace();
-        };
-        buttons.space.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.linespace) {
-        buttons.linespace.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            linespace();
-        };
-        buttons.linespace.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.backspace) {
-        buttons.backspace.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            backspace();
-        };
-        buttons.backspace.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.allClear) {
-        buttons.allClear.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
-            renderBrailleGrid();
-        };
-        buttons.allClear.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.eraseMode) {
-        buttons.eraseMode.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            isEraseMode = !isEraseMode;
-            updateEraseModeButton();
-        };
-        buttons.eraseMode.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    if (buttons.fullscreen) {
-        buttons.fullscreen.ontouchstart = function(e) {
-            e.preventDefault();
-            this.style.background = 'red';
-            const appElement = document.getElementById('braille-writer-app');
-            if (!document.fullscreenElement) {
-                appElement.requestFullscreen().catch(console.error);
-            } else {
-                document.exitFullscreen().catch(console.error);
-            }
-        };
-        buttons.fullscreen.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = '';
-        };
-    }
-    
-    console.log('Simple touch handlers set up complete');
-}
-
-// EMERGENCY OVERLAY SYSTEM - Creates invisible overlays with basic touch
-function createTouchOverlays() {
-    if (!isTouchDevice) return;
-    
-    console.log('Creating touch overlays as emergency backup');
-    
-    const buttonIds = [
-        'dot1-btn', 'dot2-btn', 'dot3-btn', 'dot4-btn', 'dot5-btn', 'dot6-btn',
-        'space-btn', 'linespace-btn', 'backspace-btn', 
-        'all-clear-btn', 'erase-mode-btn', 'fullscreen-btn'
-    ];
-    
-    buttonIds.forEach(buttonId => {
-        const originalButton = document.getElementById(buttonId);
-        if (!originalButton) return;
-        
-        // Create overlay
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 0, 0, 0.1);
-            z-index: 1000;
-            pointer-events: auto;
-            touch-action: manipulation;
-        `;
-        
-        // Make parent relative if not already
-        if (getComputedStyle(originalButton).position === 'static') {
-            originalButton.style.position = 'relative';
-        }
-        
-        // Add simple touch handler to overlay
-        overlay.ontouchstart = function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            this.style.background = 'rgba(0, 255, 0, 0.3)';
-            originalButton.style.background = 'lime';
-            
-            // Trigger the original button's action
-            setTimeout(() => {
-                originalButton.click();
-            }, 10);
-        };
-        
-        overlay.ontouchend = function(e) {
-            e.preventDefault();
-            this.style.background = 'rgba(255, 0, 0, 0.1)';
-            originalButton.style.background = '';
-        };
-        
-        originalButton.appendChild(overlay);
-    });
-}
-
-// Emergency fallback: Inline touch handlers
-function setupInlineTouchHandlers() {
-    if (!isTouchDevice) return;
-    
-    logTouchDebug('Setting up inline touch handlers as emergency fallback');
-    
-    const buttonMappings = {
-        'dot1-btn': () => { handleDotButtonClick(0); handleDotButtonRelease(); },
-        'dot2-btn': () => { handleDotButtonClick(1); handleDotButtonRelease(); },
-        'dot3-btn': () => { handleDotButtonClick(2); handleDotButtonRelease(); },
-        'dot4-btn': () => { handleDotButtonClick(3); handleDotButtonRelease(); },
-        'dot5-btn': () => { handleDotButtonClick(4); handleDotButtonRelease(); },
-        'dot6-btn': () => { handleDotButtonClick(5); handleDotButtonRelease(); },
-        'space-btn': () => insertSpace(),
-        'linespace-btn': () => linespace(),
-        'backspace-btn': () => backspace(),
-        'all-clear-btn': () => {
-            grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
-            renderBrailleGrid();
-        },
-        'erase-mode-btn': () => {
-            isEraseMode = !isEraseMode;
-            updateEraseModeButton();
-        },
-        'fullscreen-btn': () => {
-            const appElement = document.getElementById('braille-writer-app');
-            if (!document.fullscreenElement) {
-                appElement.requestFullscreen().catch(console.error);
-            } else {
-                document.exitFullscreen().catch(console.error);
-            }
-        }
-    };
-    
-    Object.keys(buttonMappings).forEach(buttonId => {
-        const button = document.getElementById(buttonId);
-        if (button) {
-            // Add onclick as absolute fallback
-            button.onclick = function(e) {
-                e.preventDefault();
-                logTouchDebug(`Inline click handler executed for ${buttonId}`);
-                buttonMappings[buttonId]();
-            };
-            
-            // Also add ontouchend
-            button.ontouchend = function(e) {
-                e.preventDefault();
-                logTouchDebug(`Inline touch handler executed for ${buttonId}`);
-                buttonMappings[buttonId]();
-            };
-        }
-    });
 }
 
 // Legacy touch functions (keeping for compatibility)
@@ -647,9 +216,10 @@ function handleKeyDown(e) {
             // For dot keys, set the dot immediately for visual feedback
             grid[cursor.row][cursor.col][action] = 1;
             renderBrailleGrid();
-            // Play sound only if key sound is enabled
-            if (isKeySoundEnabled) {
+            // Play sound only once per cluster
+            if (isKeySoundEnabled && !clusterSoundPlayed) {
                 playSoundSafely(keySound);
+                clusterSoundPlayed = true;
             }
         } else if (movementKeys.has(key)) {
             clearInterval(movementInterval);  // Clear any existing interval to prevent multiple moves
@@ -699,6 +269,7 @@ function handleKeyUp(e) {
             
             // Clear cluster tracking when all keys are released
             clusterKeys.clear();
+            clusterSoundPlayed = false; // Reset sound flag for next cluster
         }
         
         // Remove visual feedback for button release
@@ -928,7 +499,8 @@ allClearBtn.addEventListener('click', () => {
     renderBrailleGrid();
 });
 
-// Add touch support for all clear button
+// Add touch support for all clear button - DISABLED for performance (using HTML inline handlers)
+/*
 allClearBtn.addEventListener('touchstart', (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -951,6 +523,7 @@ allClearBtn.addEventListener('touchend', (e) => {
         allClearBtn.click();
     }, 10);
 }, { passive: false });
+*/
 
 slider.addEventListener('input', (e) => {
     cursor.col = parseInt(e.target.value);
@@ -991,7 +564,8 @@ dotButtons.forEach((btn, index) => {
         }
     });
     
-    // Touch events - multiple approaches
+    // Touch events - DISABLED for performance (using HTML inline handlers)
+    /*
     btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1037,11 +611,13 @@ dotButtons.forEach((btn, index) => {
         handleDotButtonRelease();
         console.log(`Dot ${index} touch cancel`);
     }, { passive: false });
+    */
 });
 
-// Event listeners for other buttons
+// Event listeners for other buttons - Touch handlers DISABLED for performance
 [spaceBtn, linespaceBtn, backspaceBtn].forEach(btn => {
-    // Add touch support with direct function calls
+    // Add touch support with direct function calls - DISABLED
+    /*
     btn.addEventListener('touchstart', (e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -1073,6 +649,7 @@ dotButtons.forEach((btn, index) => {
         e.stopPropagation();
         btn.classList.remove('touch-active');
     }, { passive: false });
+    */
 });
 
 spaceBtn.addEventListener('click', () => {
@@ -1355,11 +932,6 @@ function initialize() {
     
     // Set up all components
     detectTouchDevice();
-    if (isTouchDevice) {
-        setupSimpleTouchHandlers();
-        createTouchOverlays();
-        console.log('Touch device setup complete');
-    }
     setupSettingsControls();
     setupToggleButtons();
     setupFullscreenHandler();
