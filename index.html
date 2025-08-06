@@ -45,6 +45,88 @@
 </head>
 <body>
     <div id="braille-writer-app" class="card">
+        <!-- Braille viewport at the top -->
+        <div id="braille-grid" class="braille-grid"></div>
+        
+        <!-- Slider below viewport -->
+        <div class="slider-container">
+            <input type="range" id="slider" min="0" max="30" value="0" class="slider">
+        </div>
+        
+        <!-- Keys below slider -->
+        <div class="key-container">
+            <button class="key round-key" id="linespace-btn" 
+                    ontouchstart="event.preventDefault(); linespace();">LS (a)</button>
+            <button class="key dot-key" id="dot3-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(3); setTimeout(() => handleDotButtonRelease(), 50);">3 (s)</button>
+            <button class="key dot-key" id="dot2-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(2); setTimeout(() => handleDotButtonRelease(), 50);">2 (d)</button>
+            <button class="key dot-key" id="dot1-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(1); setTimeout(() => handleDotButtonRelease(), 50);">1 (f)</button>
+            <button class="key space-key" id="space-btn" 
+                    ontouchstart="event.preventDefault(); insertSpace();">Space (G/H)</button>
+            <button class="key dot-key" id="dot4-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(4); setTimeout(() => handleDotButtonRelease(), 50);">4 (j)</button>
+            <button class="key dot-key" id="dot5-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(5); setTimeout(() => handleDotButtonRelease(), 50);">5 (k)</button>
+            <button class="key dot-key" id="dot6-btn" 
+                    ontouchstart="event.preventDefault(); handleDotButtonClick(6); setTimeout(() => handleDotButtonRelease(), 50);">6 (l)</button>
+            <button class="key round-key" id="backspace-btn" 
+                    ontouchstart="event.preventDefault(); backspace();">BS (;)</button>
+        </div>
+        
+        <!-- Instructions drawer -->
+        <div id="instructions-drawer" class="instructions-drawer">
+            <button id="instructions-toggle" class="instructions-toggle">Instructions & Settings</button>
+            <div class="instructions-content">
+                <ul>
+                    <li><strong>Key-to-Dot Mapping:</strong> F=dot1, D=dot2, S=dot3, J=dot4, K=dot5, L=dot6</li>
+                    <li><strong>Physical Layout:</strong> 3(S)-2(D)-1(F)-Space-4(J)-5(K)-6(L)</li>
+                    <li><strong>Braille Pattern:</strong> 1-4 (top), 2-5 (middle), 3-6 (bottom)</li>
+                    <li>Space - G and/or H</li>
+                    <li>Line Spacer - A</li>
+                    <li>Backspacer - ;</li>
+                    <li>Carriage Lever - ← → Arrow keys or slider</li>
+                    <li>Braille Eraser - Erase Mode + click to flatten dots</li>
+                    <li>Paper feeder Knob - ↑ ↓ Arrows</li>
+                    <li><strong>Touch Keys on Mobile:</strong> For best experience on tablets/phones, rotate to landscape orientation and use full screen mode</li>
+                </ul>
+                <div class="settings">
+                    <div class="bell-settings">
+                        <label for="bell-warning">Warning Bell (spaces from end):</label>
+                        <select id="bell-warning">
+                            <option value="7" selected>7</option>
+                            <option value="6">6</option>
+                            <option value="5">5</option>
+                            <option value="4">4</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                    <div class="toggle-settings">
+                        <label for="toggle-bell">Right Margin Bell:</label>
+                        <input type="checkbox" id="toggle-bell" checked>
+                    </div>
+                    <div class="toggle-settings">
+                        <label for="toggle-key-sound">Key Embossing Sound:</label>
+                        <input type="checkbox" id="toggle-key-sound" checked>
+                    </div>
+                </div>
+                <div class="volume-settings">
+                    <label for="volume-control">Sound Volume:</label>
+                    <input type="range" id="volume-control" min="0" max="100" value="5">
+                </div>
+                <div class="cache-settings">
+                    <button id="clear-cache-btn" class="small-button" style="margin-top: 10px;">
+                        Clear Cache & Reload
+                    </button>
+                    <small style="display: block; margin-top: 5px; opacity: 0.7;">
+                        Use if app seems stuck with old version
+                    </small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Header with title and controls at the bottom -->
         <div class="card-header">
             <h2 id="braille-writer-simulator" class="card-title">Braille Writer Simulator</h2>
             <div class="header-buttons">
@@ -54,80 +136,6 @@
                         ontouchstart="event.preventDefault(); isEraseMode = !isEraseMode; updateEraseModeButton();">Erase Mode</button>
                 <button id="fullscreen-btn" class="small-button" 
                         ontouchstart="event.preventDefault(); document.getElementById('braille-writer-app').requestFullscreen();">Full Screen</button>
-            </div>
-        </div>
-        <div class="card-content">
-            <div id="braille-grid" class="braille-grid"></div>
-            <div class="slider-container">
-                <input type="range" id="slider" min="0" max="30" value="0" class="slider">
-                <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
-            </div>
-            <div class="key-container">
-                <button class="key round-key" id="linespace-btn" 
-                        ontouchstart="event.preventDefault(); linespace();">LS (a)</button>
-                <button class="key dot-key" id="dot1-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(0); setTimeout(() => handleDotButtonRelease(), 50);">1 (f)</button>
-                <button class="key dot-key" id="dot2-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(1); setTimeout(() => handleDotButtonRelease(), 50);">2 (d)</button>
-                <button class="key dot-key" id="dot3-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(2); setTimeout(() => handleDotButtonRelease(), 50);">3 (s)</button>
-                <button class="key space-key" id="space-btn" 
-                        ontouchstart="event.preventDefault(); insertSpace();">Space (G/H)</button>
-                <button class="key dot-key" id="dot4-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(3); setTimeout(() => handleDotButtonRelease(), 50);">4 (j)</button>
-                <button class="key dot-key" id="dot5-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(4); setTimeout(() => handleDotButtonRelease(), 50);">5 (k)</button>
-                <button class="key dot-key" id="dot6-btn" 
-                        ontouchstart="event.preventDefault(); handleDotButtonClick(5); setTimeout(() => handleDotButtonRelease(), 50);">6 (l)</button>
-                <button class="key round-key" id="backspace-btn" 
-                        ontouchstart="event.preventDefault(); backspace();">BS (;)</button>
-            </div>
-        </div>
-    </div>
-    <div id="instructions-drawer" class="instructions-drawer">
-        <button id="instructions-toggle" class="instructions-toggle">Instructions & Settings</button>
-        <div class="instructions-content">
-            <ul>
-                <li>Key/Dot: F (1), D (2), S (3), J (4), K (5), L (6)</li>
-                <li>Space - G and/or H</li>
-                <li>Line Spacer - A</li>
-                <li>Backspacer - ;</li>
-                <li>Carriage Lever - ← → Arrow keys or slider</li>
-                <li>Braille Eraser - Erase Mode + click to flatten dots</li>
-                <li>Paper feeder Knob - ↑ ↓ Arrows</li>
-                <li><strong>Touch Keys on Mobile:</strong> For best experience on tablets/phones, rotate to landscape orientation and use full screen mode</li>
-            </ul>
-            <div class="settings">
-                <div class="bell-settings">
-                    <label for="bell-warning">Warning Bell (spaces from end):</label>
-                    <select id="bell-warning">
-                        <option value="7" selected>7</option>
-                        <option value="6">6</option>
-                        <option value="5">5</option>
-                        <option value="4">4</option>
-                        <option value="3">3</option>
-                    </select>
-                </div>
-                <div class="toggle-settings">
-                    <label for="toggle-bell">Right Margin Bell:</label>
-                    <input type="checkbox" id="toggle-bell" checked>
-                </div>
-                <div class="toggle-settings">
-                    <label for="toggle-key-sound">Key Embossing Sound:</label>
-                    <input type="checkbox" id="toggle-key-sound" checked>
-                </div>
-            </div>
-            <div class="volume-settings">
-                <label for="volume-control">Sound Volume:</label>
-                <input type="range" id="volume-control" min="0" max="100" value="5">
-            </div>
-            <div class="cache-settings">
-                <button id="clear-cache-btn" class="small-button" style="margin-top: 10px;">
-                    Clear Cache & Reload
-                </button>
-                <small style="display: block; margin-top: 5px; opacity: 0.7;">
-                    Use if app seems stuck with old version
-                </small>
             </div>
         </div>
     </div>

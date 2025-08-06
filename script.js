@@ -147,7 +147,7 @@ const ROWS = 20;
 const COLS = 31;  // Increased from 27 to 31
 const EMPTY_CELL = [0, 0, 0, 0, 0, 0];
 const keyMap = {
-    'f': 0, 'd': 1, 's': 2, 'j': 3, 'k': 4, 'l': 5,
+    'f': 1, 'd': 2, 's': 3, 'j': 4, 'k': 5, 'l': 6,
     'g': 'space', 'h': 'space',
     'a': 'linespace', ';': 'backspace',
     'arrowup': 'up', 'arrowdown': 'down', 'arrowleft': 'left', 'arrowright': 'right'
@@ -198,7 +198,6 @@ let isKeySoundEnabled = true;
 const brailleGrid = document.getElementById('braille-grid');
 const cursorPosition = document.getElementById('cursor-position');
 const slider = document.getElementById('slider');
-const cellCount = document.getElementById('cell-count');
 const bellWarningSelect = document.getElementById('bell-warning');
 const toggleBell = document.getElementById('toggle-bell');
 const toggleKeySound = document.getElementById('toggle-key-sound');
@@ -306,10 +305,6 @@ function updateGrid(newCell, row, col) {
     renderBrailleGrid();
 }
 
-function updateCellCount() {
-    cellCount.textContent = `Cell: ${cursor.col + 1} / 31`;
-}
-
 function checkBellWarning() {
     // Standardize the warning position calculation
     const warningPosition = COLS - bellWarningSpaces - 1;
@@ -328,7 +323,6 @@ function checkBellWarning() {
 function moveCursor(rowDelta, colDelta, rotate = false) {
     cursor.row = Math.max(0, Math.min(ROWS - 1, cursor.row + rowDelta));
     cursor.col = Math.max(0, Math.min(COLS - 1, cursor.col + colDelta));
-    updateCellCount();
     slider.value = cursor.col;  // Update slider to match cursor position
     renderBrailleGrid();
     if (rotate) {
@@ -509,8 +503,12 @@ function renderBrailleCell(cell, rowIndex, colIndex) {
     const dotContainer = document.createElement('div');
     dotContainer.className = 'braille-dot-container';
 
-    // The dots are ordered in visual order: 1,2,3,4,5,6 which maps to array indices 0,1,2,3,4,5
-    [0, 1, 2, 3, 4, 5].forEach((dotIndex, visualPosition) => {
+    // The dots need to be arranged in proper Braille cell layout:
+    // Grid position: [0,3,1,4,2,5] to create:
+    // dot1(0)  dot4(3)
+    // dot2(1)  dot5(4)  
+    // dot3(2)  dot6(5)
+    [0, 3, 1, 4, 2, 5].forEach((dotIndex) => {
         const dot = document.createElement('div');
         dot.className = `braille-dot ${cell[dotIndex] ? 'braille-dot-active' : 'braille-dot-inactive'}`;
         
@@ -719,7 +717,6 @@ allClearBtn.addEventListener('touchend', (e) => {
 
 slider.addEventListener('input', (e) => {
     cursor.col = parseInt(e.target.value);
-    updateCellCount();
     renderBrailleGrid();
     rotateSlider();
     checkBellWarning();
@@ -875,17 +872,23 @@ function setupInstructionsDrawer() {
         return;
     }
     
+    // Function to handle drawer state changes
+    function handleDrawerToggle() {
+        instructionsDrawer.classList.toggle('open');
+        const isOpen = instructionsDrawer.classList.contains('open');
+        
+        // Update button text
+        instructionsToggle.textContent = isOpen 
+            ? 'Close Instructions & Settings' 
+            : 'Instructions & Settings';
+    }
+    
     // Remove ALL existing event listeners by cloning and replacing
     const newToggle = instructionsToggle.cloneNode(true);
     instructionsToggle.parentNode.replaceChild(newToggle, instructionsToggle);
     
     // Add the single click handler
-    newToggle.addEventListener('click', () => {
-        instructionsDrawer.classList.toggle('open');
-        newToggle.textContent = instructionsDrawer.classList.contains('open') 
-            ? 'Close Instructions & Settings' 
-            : 'Instructions & Settings';
-    });
+    newToggle.addEventListener('click', handleDrawerToggle);
     
     // Add touch support
     newToggle.addEventListener('touchstart', (e) => {
@@ -897,10 +900,7 @@ function setupInstructionsDrawer() {
         e.preventDefault();
         newToggle.classList.remove('active');
         // Directly toggle the drawer
-        instructionsDrawer.classList.toggle('open');
-        newToggle.textContent = instructionsDrawer.classList.contains('open') 
-            ? 'Close Instructions & Settings' 
-            : 'Instructions & Settings';
+        handleDrawerToggle();
     }, { passive: false });
 }
 
@@ -1102,24 +1102,32 @@ function initialize() {
     
     // Basic UI initialization
     slider.value = cursor.col;
-    updateCellCount();
     renderBrailleGrid();
     
-    // Focus management setup
+    // Focus management setup - ensure app gets focus immediately
     const appContainer = document.getElementById('braille-writer-app');
     appContainer.setAttribute('tabindex', '0');
-    appContainer.focus();
+    
+    // Force focus immediately and on page load
+    const focusApp = () => {
+        appContainer.focus();
+        // Also blur any active form elements to prevent typing in address bar
+        if (document.activeElement && document.activeElement !== appContainer) {
+            document.activeElement.blur();
+        }
+    };
+    
+    focusApp(); // Focus immediately
+    
+    // Ensure focus on window load
+    window.addEventListener('load', focusApp);
     
     // Handle click events to maintain focus
-    appContainer.addEventListener('click', () => {
-        appContainer.focus();
-    });
+    appContainer.addEventListener('click', focusApp);
 
     // Ensure focus is maintained after any user interaction
     appContainer.addEventListener('blur', () => {
-        setTimeout(() => {
-            appContainer.focus();
-        }, 100);
+        setTimeout(focusApp, 100);
     });
     
     // Set up all components
@@ -1395,7 +1403,6 @@ function handleAppShortcuts() {
         grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
         cursor = { row: 0, col: 0 };
         renderBrailleGrid();
-        updateCellCount();
         slider.value = 0;
     }
     
