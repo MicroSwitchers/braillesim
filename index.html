@@ -159,6 +159,16 @@
             display: none;
         }
 
+        /* Fullscreen button glint animation when not in fullscreen */
+        #fullscreen-btn:not(.in-fullscreen) {
+            animation: fullscreenGlint 4s ease-in-out infinite;
+            animation-delay: 2s;
+        }
+
+        #fullscreen-btn:not(.in-fullscreen):hover {
+            animation-play-state: paused;
+        }
+
         /* Braille Grid */
         .braille-grid {
             flex-grow: 1; 
@@ -177,7 +187,7 @@
         .braille-row {
             display: flex;
             flex-wrap: nowrap;
-            justify-content: flex-start;
+            justify-content: center;
             margin-bottom: 8px;
         }
 
@@ -240,6 +250,23 @@
 
         @keyframes cursorPulse {
             50% { opacity: 0.7; }
+        }
+
+        @keyframes fullscreenGlint {
+            0% { 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+            }
+            20% { 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.8);
+                transform: translateY(0px) scale(1.05);
+            }
+            40% { 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+                transform: translateY(0px) scale(1);
+            }
+            100% { 
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
+            }
         }
 
         /* Slider */
@@ -506,6 +533,11 @@
             padding: 20px 12px; /* More padding for better layout */
         }
         
+        /* Better drawer scrolling in fullscreen */
+        #braille-writer-app.fullscreen-mode .instructions-drawer.open .instructions-content {
+            max-height: 400px; /* Larger in fullscreen to utilize space */
+        }
+        
         /* High Contrast Dark Mode */
         #braille-writer-app.high-contrast-dark {
             background-color: #121212;
@@ -571,6 +603,8 @@
             color: #ffff00;
             border-color: #444;
             box-shadow: 0 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+            outline: 2px solid #ffffff;
+            outline-offset: -2px;
         }
         #braille-writer-app.high-contrast-dark .key:hover {
             background: #333;
@@ -637,6 +671,11 @@
             font-size: 16px; /* Increased from 12px */
             font-weight: bold;
             min-height: 35px; /* Adjusted for new height */
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-drag: none;
         }
         .handle-part:hover {
             background-color: rgba(255,255,255,0.15);
@@ -1375,8 +1414,16 @@
             });
             document.addEventListener('fullscreenchange', () => {
                 const appElement = document.getElementById('braille-writer-app');
-                appElement.classList.toggle('fullscreen-mode', !!document.fullscreenElement);
-                fullscreenBtn.textContent = document.fullscreenElement ? 'Exit Full Screen' : 'Full Screen';
+                const isFullscreen = !!document.fullscreenElement;
+                appElement.classList.toggle('fullscreen-mode', isFullscreen);
+                fullscreenBtn.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
+                
+                // Control the glint animation based on fullscreen state
+                if (isFullscreen) {
+                    fullscreenBtn.classList.add('in-fullscreen');
+                } else {
+                    fullscreenBtn.classList.remove('in-fullscreen');
+                }
             });
             
             saveBtn.addEventListener('click', saveBraille);
