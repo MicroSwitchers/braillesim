@@ -2956,16 +2956,27 @@
                 for (let i = 0; i < ROWS; i++) {
                     let line = '';
                     for (let j = 0; j < COLS; j++) {
-                        const key = grid[i][j].join('');
-                        line += brailleUnicodeMap[key] || '⠀';
+                        const cell = grid[i][j];
+                        const key = cell.join('');
+                        line += brailleUnicodeMap[key] || '⠀'; // Use braille blank character
                     }
+                    // Trim trailing blank braille cells from each line
+                    line = line.replace(/⠀+$/, '');
                     unicodeString += line + '\n';
                 }
+                
+                // Remove trailing empty lines
+                unicodeString = unicodeString.replace(/\n+$/, '');
 
-                const blob = new Blob([unicodeString.trimEnd()], { type: 'text/plain;charset=utf-8' });
+                const blob = new Blob([unicodeString], { type: 'text/plain;charset=utf-8' });
                 const a = document.createElement('a');
                 a.href = URL.createObjectURL(blob);
-                a.download = 'braille_document.txt';
+                
+                // Generate filename with timestamp
+                const now = new Date();
+                const timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`;
+                a.download = `braille_${timestamp}.brf`;
+                
                 a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
@@ -2985,7 +2996,7 @@
             try {
                 const input = document.createElement('input');
                 input.type = 'file';
-                input.accept = '.txt';
+                input.accept = '.brf,.txt';
                 input.onchange = e => {
                     const file = e.target.files[0];
                     if (!file) return;
@@ -2995,20 +3006,48 @@
                         try {
                             const text = event.target.result;
                             const lines = text.split('\n');
+                            
+                            // Determine how many rows we need
+                            const neededRows = Math.max(LINES_PER_PAGE, lines.length);
+                            
+                            // Expand grid if necessary
+                            while (ROWS < neededRows) {
+                                ROWS += LINES_PER_PAGE;
+                            }
 
-                            const newGrid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+                            // Create a fresh grid with proper deep copies
+                            grid = [];
+                            for (let i = 0; i < ROWS; i++) {
+                                const row = [];
+                                for (let j = 0; j < COLS; j++) {
+                                    row.push([0, 0, 0, 0, 0, 0]); // Fresh empty cell
+                                }
+                                grid.push(row);
+                            }
 
-                            for (let i = 0; i < Math.min(lines.length, ROWS); i++) {
-                                for (let j = 0; j < Math.min(lines[i].length, COLS); j++) {
-                                    const char = lines[i][j];
-                                    if (unicodeBrailleMap[char]) {
-                                        newGrid[i][j] = unicodeBrailleMap[char];
+                            // Load the data
+                            for (let i = 0; i < lines.length; i++) {
+                                const line = lines[i];
+                                for (let j = 0; j < line.length && j < COLS; j++) {
+                                    const char = line[j];
+                                    const dots = unicodeBrailleMap[char];
+                                    if (dots) {
+                                        // Deep copy the dots array
+                                        grid[i][j] = [...dots];
                                     }
+                                    // If no mapping, cell stays as empty [0,0,0,0,0,0]
                                 }
                             }
-                            grid = newGrid;
+                            
+                            // Reset cursor to start
                             cursor = { row: 0, col: 0 };
-                            renderBrailleGrid();
+                            lastCursor = { row: -1, col: -1 };
+                            
+                            // Force full re-render
+                            cellElements = [];
+                            initialRender();
+                            updateCellScaling();
+                            
                             showToast('Document loaded successfully!');
                         } catch (error) {
                             showToast('Failed to load file. Please check the format.', true);
@@ -3219,6 +3258,12 @@
                         grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
                         cursor = { row: 0, col: 0 };
                         lastCursor = { row: -1, col: -1 }; // Reset last cursor position
+                        
+                        // Reset carriage lever (slider) to starting position
+                        if (slider) {
+                            slider.value = 0;
+                        }
+                        
                         renderBrailleGrid();
                         showToast('Document cleared');
                     } catch (error) {
