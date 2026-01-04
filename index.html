@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="format-detection" content="telephone=no">
     <meta name="msapplication-tap-highlight" content="no">
-    
+
     <title>Braille Writer Simulator</title>
-    <meta name="description" content="A mechanical Braille writer simulator for learning and practicing Braille writing techniques">
+    <meta name="description"
+        content="A mechanical Braille writer simulator for learning and practicing Braille writing techniques">
     <meta name="keywords" content="braille, writer, simulator, accessibility, education, tactile, mechanical">
     <meta name="author" content="Braille Writer Simulator">
-    
+
     <!-- PWA Meta Tags -->
     <meta name="application-name" content="Braille Writer">
     <meta name="apple-mobile-web-app-title" content="Braille Writer">
@@ -21,16 +24,16 @@
     <meta name="msapplication-navbutton-color" content="#007c8a">
     <meta name="msapplication-TileColor" content="#005f6b">
     <meta name="msapplication-starturl" content="./index.html">
-    
+
     <!-- Web App Manifest -->
     <link rel="manifest" href="./manifest.json">
-    
+
     <!-- Favicons and Icons -->
     <link rel="icon" type="image/svg+xml" href="./braillesim.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="./icons/icon-96x96.png">
     <link rel="icon" type="image/png" sizes="16x16" href="./icons/icon-72x72.png">
     <link rel="shortcut icon" href="./braillesim.svg">
-    
+
     <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="./icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="72x72" href="./icons/icon-72x72.png">
@@ -41,51 +44,69 @@
     <link rel="apple-touch-icon" sizes="192x192" href="./icons/icon-192x192.png">
     <link rel="apple-touch-icon" sizes="384x384" href="./icons/icon-384x384.png">
     <link rel="apple-touch-icon" sizes="512x512" href="./icons/icon-512x512.png">
-    
+
     <!-- Microsoft Tiles -->
     <meta name="msapplication-TileImage" content="./icons/icon-144x144.png">
     <meta name="msapplication-square70x70logo" content="./icons/icon-72x72.png">
     <meta name="msapplication-square150x150logo" content="./icons/icon-152x152.png">
     <meta name="msapplication-wide310x150logo" content="./icons/icon-384x384.png">
     <meta name="msapplication-square310x310logo" content="./icons/icon-512x512.png">
-    
-    <!-- Preload critical resources -->
-    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js" as="script">
-    
-    <!-- Tone.js for sound generation -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js"></script>
+
+    <!-- Preload audio files for better responsiveness -->
+    <link rel="preload" href="./sounds/key.wav" as="audio">
+    <link rel="preload" href="./sounds/ding.wav" as="audio">
 
     <style>
         /* General App Structure and Flex Layout */
-        html, body {
+        html,
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
-            overflow: hidden; /* Prevent body scrolling */
+            overflow: hidden;
+            /* Prevent body scrolling */
             font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-            background-color: #e0e0e0;
+            background-color: #1a1a2e;
             color: #333;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            /* Prevent pull-to-refresh and overscroll */
+            overscroll-behavior: none;
+            /* Prevent text selection on touch */
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        /* Allow text selection in specific areas */
+        .braille-grid,
+        .instructions-content,
+        .splash-content {
+            -webkit-user-select: text;
+            user-select: text;
         }
 
         #braille-writer-app {
             display: flex;
-            flex-direction: column;
-            height: 100vh; /* Full viewport height */
+            flex-direction: row;
+            height: 100vh;
+            /* Full viewport height */
+            height: 100dvh; /* Dynamic viewport height for mobile browsers */
             width: 100%;
-            max-width: 820px;
-            margin: 0 auto;
-            background-color: #005f6b; /* Classic Perkins Blue/Green */
+            margin: 0;
+            background-color: #005f6b;
+            /* Classic Braille Writer Blue/Green */
             background-image: linear-gradient(145deg, #007c8a, #004d56);
-            border: 1px solid #003e46;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), inset 0 2px 3px rgba(255, 255, 255, 0.2);
-            border-radius: 12px;
+            border: none;
+            box-shadow: none;
+            border-radius: 0;
             overflow: hidden;
+            /* Prevent touch actions on main container */
+            touch-action: manipulation;
             transition: background-color 0.3s ease, border-color 0.3s ease;
-            position: relative; /* Needed for positioning rotary handles */
+            position: relative;
         }
-        
+
         #braille-writer-app:focus {
             outline: none;
         }
@@ -94,15 +115,209 @@
             box-sizing: border-box;
         }
 
-        .card-header {
-            padding: 12px 20px;
-            border-bottom: 1px solid #004d56;
-            background-color: rgba(0, 0, 0, 0.1);
+        /* Side Toolbar */
+        .side-toolbar {
+            width: 60px;
+            min-width: 60px;
+            background: linear-gradient(180deg, #003e46, #002a30);
+            border-right: 2px solid #004d56;
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
+            padding: 10px 5px;
+            gap: 8px;
+            overflow-y: auto;
+            overflow-x: hidden;
             flex-shrink: 0;
-            transition: background-color 0.3s ease, border-color 0.3s ease;
+            z-index: 100;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+        }
+
+        /* Webkit scrollbar styling for side toolbar */
+        .side-toolbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .side-toolbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        .side-toolbar::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .side-toolbar::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background-clip: padding-box;
+        }
+
+        .toolbar-title {
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            transform: rotate(180deg);
+            font-size: 11px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-top: 5px;
+            margin-bottom: 2px;
+            white-space: nowrap;
+        }
+
+        .toolbar-divider {
+            width: 80%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            margin: 5px 0;
+        }
+
+        .toolbar-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.05));
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 150ms ease-out;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            padding: 4px;
+            gap: 2px;
+        }
+
+        .toolbar-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+        }
+
+        .toolbar-btn:active,
+        .toolbar-btn.active {
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+            transform: translateY(1px);
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .toolbar-btn svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .toolbar-btn.install-btn {
+            background: linear-gradient(135deg, #4CAF50, #388E3C);
+            border-color: #2E7D32;
+        }
+
+        .toolbar-btn.install-btn:hover {
+            background: linear-gradient(135deg, #66BB6A, #4CAF50);
+        }
+
+        .toolbar-btn.install-btn.hidden {
+            display: none;
+        }
+
+        /* Combined Line Navigation Button */
+        .toolbar-nav-btn {
+            width: 44px;
+            min-height: 85px;
+            border-radius: 10px;
+            border: 1px solid rgba(79, 209, 197, 0.4);
+            background: linear-gradient(135deg, rgba(79, 209, 197, 0.2), rgba(56, 178, 172, 0.1));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            box-sizing: border-box;
+        }
+
+        .nav-half {
+            width: 100%;
+            height: 28px;
+            min-height: 28px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 150ms ease-out;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-half:hover {
+            background: rgba(79, 209, 197, 0.3);
+        }
+
+        .nav-half:active {
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .nav-half svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2.5;
+        }
+
+        .nav-up {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .nav-label {
+            font-size: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: rgba(79, 209, 197, 0.9);
+            letter-spacing: 0.5px;
+            padding: 5px 0 6px 0;
+            text-align: center;
+            line-height: 1.3;
+            display: block;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .toolbar-btn.erase-active {
+            background: linear-gradient(135deg, #ff5e5e, #ff3333) !important;
+            border-color: #ff3333;
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        /* Hidden original header - keeping for compatibility */
+        .card-header {
+            display: none;
         }
 
         .card-title {
@@ -116,46 +331,10 @@
         }
 
         .header-buttons {
-            display: flex;
-            gap: 10px;
+            display: none;
         }
 
         .small-button {
-            font-size: 12px;
-            background: linear-gradient(135deg, #e0e0e0, #cccccc);
-            border: 1px solid #999;
-            padding: 6px 12px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 150ms ease-out;
-            font-weight: 600;
-            color: #333;
-            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
-        }
-
-        .small-button:hover {
-            background: linear-gradient(135deg, #f0f0f0, #d9d9d9);
-            border-color: #888;
-        }
-
-        .small-button:active, .small-button.active {
-            background: linear-gradient(135deg, #cccccc, #e0e0e0);
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2), inset 0 1px 2px rgba(0, 0, 0, 0.2);
-            transform: translateY(1px);
-        }
-
-        .install-button {
-            background: linear-gradient(135deg, #4CAF50, #45a049);
-            color: white;
-            border-color: #45a049;
-        }
-
-        .install-button:hover {
-            background: linear-gradient(135deg, #5CBF60, #4CAF50);
-        }
-
-        .install-button.hidden {
             display: none;
         }
 
@@ -169,33 +348,62 @@
             animation-play-state: paused;
         }
 
-        /* Braille Grid */
         .braille-grid {
-            flex-grow: 1; 
+            flex: 0 0 auto;
+            height: 45%;
+            min-height: 80px;
             overflow: auto;
-            background-color: #f0e6d6; /* Buff paper color */
+            background-color: #f0e6d6;
             border: 4px solid #c9c9c9;
             border-top-color: #aaa;
             border-left-color: #aaa;
             padding: 12px 8px;
             border-radius: 8px;
             margin: 16px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            /* CSS Custom Properties for scaling */
+            --cell-scale: 1;
+            --cell-width: 20px;
+            --cell-height: 28px;
+            --cell-margin: 2px;
+            --dot-size: 7px;
+            --dot-gap: 3px;
+            --row-margin: 8px;
         }
 
         .braille-row {
             display: flex;
             flex-wrap: nowrap;
             justify-content: center;
-            margin-bottom: 8px;
+            margin-bottom: var(--row-margin, 8px);
+        }
+
+        .braille-row.page-break {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px dashed rgba(0, 77, 86, 0.5);
+            position: relative;
+        }
+
+        .braille-row.page-break::before {
+            content: attr(data-page);
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #f0e6d6;
+            padding: 0 10px;
+            font-size: 10px;
+            color: rgba(0, 77, 86, 0.6);
+            font-weight: 600;
         }
 
         .braille-cell {
             display: inline-block;
-            margin: 0 2px;
-            width: 20px;
-            height: 28px;
+            margin: 0 var(--cell-margin, 2px);
+            width: var(--cell-width, 20px);
+            height: var(--cell-height, 28px);
             position: relative;
             border: 1px solid transparent;
             flex-shrink: 0;
@@ -204,7 +412,7 @@
         .braille-dot-container {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 3px;
+            gap: var(--dot-gap, 3px);
             width: 100%;
             height: 100%;
             justify-items: center;
@@ -212,21 +420,21 @@
         }
 
         .braille-dot {
-            width: 7px;
-            height: 7px;
+            width: var(--dot-size, 7px);
+            height: var(--dot-size, 7px);
             border-radius: 50%;
             transition: all 0.1s ease-in-out;
         }
 
         .braille-dot-active {
             background: #4a4a4a;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
+            box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
             border: 1px solid #222;
         }
 
         .braille-dot-inactive {
             background: #e6dac8;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
         .current-cell {
@@ -249,22 +457,27 @@
         }
 
         @keyframes cursorPulse {
-            50% { opacity: 0.7; }
+            50% {
+                opacity: 0.7;
+            }
         }
 
         @keyframes fullscreenGlint {
-            0% { 
+            0% {
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
             }
-            20% { 
+
+            20% {
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 0 15px rgba(255, 255, 255, 0.8);
                 transform: translateY(0px) scale(1.05);
             }
-            40% { 
+
+            40% {
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
                 transform: translateY(0px) scale(1);
             }
-            100% { 
+
+            100% {
                 box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.5);
             }
         }
@@ -274,7 +487,7 @@
             margin: 0 16px 12px;
             padding: 6px 20px 6px 16px;
             border-radius: 6px;
-            background: rgba(0,0,0,0.1);
+            background: rgba(0, 0, 0, 0.1);
             flex-shrink: 0;
             position: relative;
             transition: background-color 0.3s ease;
@@ -302,7 +515,7 @@
             cursor: pointer;
             border-radius: 4px;
             border: 1px solid #888;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
         }
 
         .slider::-moz-range-thumb {
@@ -313,111 +526,271 @@
             border-radius: 4px;
             border: 1px solid #888;
         }
-        
+
         .cell-count {
             position: absolute;
-            bottom: -15px;
-            right: 16px;
-            font-size: 12px;
-            color: #e0e0e0;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.3);
+            right: 20px;
+            top: -25px;
+            /* Move above slider */
+            font-size: 13px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.9);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+            background: rgba(0, 0, 0, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
         }
 
-        /* Keys */
         .key-container {
+            flex: 1 1 0;
+            min-height: 120px;
             display: flex;
             justify-content: center;
-            align-items: center;
+            align-items: stretch;
             flex-wrap: nowrap;
-            gap: 8px;
-            padding: 16px 8px;
-            margin: 0 16px 20px;
-            border-radius: 16px;
-            background: rgba(0,0,0,0.1);
-            flex-shrink: 0;
+            gap: 1%;
+            padding: 15px 10px;
+            margin: 0 10px 10px 10px;
+            border-radius: 20px;
+            background: rgba(0, 0, 0, 0.15);
             transition: background-color 0.3s ease;
+            overflow: hidden;
+        }
+
+        .key-container.hidden {
+            display: none;
+        }
+
+        /* When touch keys are hidden, expand the braille grid */
+        #braille-writer-app.keys-hidden .braille-grid {
+            flex: 1 1 auto;
+            height: auto;
+            min-height: 200px;
         }
 
         .key {
+            flex: 1 1 0;
+            min-width: 40px;
             font-weight: 700;
             color: #e0e0e0;
-            padding: 0.8em 0.6em;
-            background: linear-gradient(135deg, #5a5a5a, #3a3a3a);
-            border: 1px solid #222;
-            border-bottom-color: #666;
-            border-right-color: #666;
-            border-radius: 0.75em;
+            padding: 0.8em;
+            background: linear-gradient(180deg, #5a5a5a 0%, #4a4a4a 40%, #3a3a3a 100%);
+            border: 3px solid #222;
+            border-top-color: #666;
+            border-left-color: #555;
+            border-radius: 12px;
             cursor: pointer;
             margin: 3px;
             transform-style: preserve-3d;
-            transition: all 150ms ease-out;
-            text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+            transition: all 100ms ease-out;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            box-shadow: 
+                0 6px 0 #222,
+                0 8px 10px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.2);
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
 
         .key:hover {
-            background: linear-gradient(135deg, #6a6a6a, #4a4a4a);
+            background: linear-gradient(180deg, #626262 0%, #525252 40%, #424242 100%);
+            box-shadow: 
+                0 6px 0 #222,
+                0 10px 15px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 -2px 4px rgba(0, 0, 0, 0.15);
         }
 
-        .key:active, .key.active {
-            transform: translateY(2px);
-            background: linear-gradient(135deg, #3a3a3a, #5a5a5a);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(0, 0, 0, 0.2);
+        .key:active,
+        .key.active {
+            transform: translateY(4px);
+            background: linear-gradient(180deg, #4a4a4a 0%, #3a3a3a 40%, #2a2a2a 100%);
+            box-shadow: 
+                0 2px 0 #222,
+                0 3px 5px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1),
+                inset 0 2px 4px rgba(0, 0, 0, 0.3);
         }
 
         /* Visual feedback for pressed keys */
         .key.pressed {
-            transform: translateY(2px);
-            background: linear-gradient(135deg, #4a5a5a, #3a4a4a);
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4), inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 6px rgba(0, 124, 138, 0.25);
-            border-color: #3a4a4a;
+            transform: translateY(4px);
+            background: linear-gradient(180deg, #3a4a4a 0%, #2a3a3a 40%, #1a2a2a 100%);
+            box-shadow: 
+                0 2px 0 #1a2a2a,
+                0 3px 5px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05),
+                inset 0 2px 4px rgba(0, 0, 0, 0.3),
+                0 0 15px rgba(0, 124, 138, 0.4);
+            border-color: #2a3a3a;
         }
 
         .key.dot-key {
-            width: 75px; 
-            height: 75px;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
-            border-bottom-left-radius: 35px;
-            border-bottom-right-radius: 35px;
+            flex: 1 1 0;
+            min-width: 50px;
+            min-height: 80px;
+            border-radius: 15px 15px 35px 35px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            font-size: 13px;
+            font-size: clamp(11px, 1.8vw, 18px);
+            letter-spacing: 0.5px;
         }
 
         .space-key {
-            width: 100px;
-            height: 75px;
-            border-radius: 20px;
+            flex: 1.5 1 0;
+            align-self: flex-end;
+            min-width: 80px;
+            min-height: 70px;
+            height: 75%;
+            border-radius: 16px;
+            font-size: clamp(10px, 1.5vw, 16px);
+            letter-spacing: 1px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         .round-key {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
+            flex: 0.6 1 0;
+            align-self: flex-end;
+            min-width: 45px;
+            max-width: 100px;
+            min-height: 45px;
+            height: 75%;
+            border-radius: 9999px;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-size: 14px;
+            font-size: clamp(8px, 1.2vw, 14px);
+            letter-spacing: 0.3px;
+            padding: 0.5em;
+        }
+
+        /* Resizer Bar - Drag handle between braille grid and keys */
+        .resizer-bar {
+            flex-shrink: 0;
+            height: 20px;
+            min-height: 20px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.3));
+            cursor: ns-resize;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 10px;
+            border-radius: 10px;
+            touch-action: none;
+            /* Prevent default touch behavior */
+            user-select: none;
+            -webkit-user-select: none;
+            position: relative;
+            transition: background-color 0.2s ease;
+        }
+
+        .resizer-bar:hover {
+            background: linear-gradient(180deg, rgba(0, 124, 138, 0.4), rgba(0, 124, 138, 0.5));
+        }
+
+        .resizer-bar:active,
+        .resizer-bar.dragging {
+            background: linear-gradient(180deg, rgba(0, 124, 138, 0.6), rgba(0, 124, 138, 0.7));
+        }
+
+        /* Visual handle on resizer bar */
+        .resizer-handle {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            padding: 4px 30px;
+        }
+
+        .resizer-handle-line {
+            width: 40px;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 2px;
+            transition: background-color 0.2s ease;
+        }
+
+        .resizer-bar:hover .resizer-handle-line {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        .resizer-bar.dragging .resizer-handle-line {
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Touch-friendly larger hit area */
+        .resizer-bar::before {
+            content: '';
+            position: absolute;
+            top: -12px;
+            bottom: -12px;
+            left: 0;
+            right: 0;
+            /* Extends touch target to 44px total for accessibility */
         }
 
         /* Instructions & Settings */
         .instructions-drawer {
             background: #004d56;
-            border-top: 1px solid #007c8a;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            position: absolute;
+            /* Overlay drawer */
+            bottom: 0;
+            left: 60px;
+            /* Offset for toolbar */
+            right: 0;
+            z-index: 200;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.3);
+            max-height: 0;
+            overflow: hidden;
+        }
+
+        .instructions-drawer.open {
+            max-height: 80vh;
+            /* Allow it to come up */
+        }
+
+        .instructions-close-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 150ms ease;
+            z-index: 10;
+        }
+
+        .instructions-close-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+
+        .instructions-close-btn:active {
+            transform: scale(0.95);
         }
 
         .instructions-toggle {
             width: 100%;
             padding: 12px;
-            background: rgba(0,0,0,0.2);
+            background: rgba(0, 0, 0, 0.2);
             border: none;
             border-bottom: 1px solid #003e46;
             color: #fff;
@@ -427,6 +800,8 @@
             outline: none;
             position: relative;
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            display: none;
+            /* Hide bottom bar toggle since we have sidebar button */
         }
 
         .instructions-toggle::after {
@@ -444,17 +819,38 @@
         }
 
         .instructions-content {
-            padding: 0 20px;
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 300ms ease, padding 300ms ease;
+            padding: 20px;
             color: #e0e0e0;
+            overflow-y: auto;
+            max-height: 100%;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+        }
+
+        /* Webkit scrollbar styling for instructions drawer */
+        .instructions-content::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .instructions-content::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+        }
+
+        .instructions-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .instructions-content::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background-clip: padding-box;
         }
 
         .instructions-drawer.open .instructions-content {
-            max-height: 500px; /* Increased from 400px */
-            overflow-y: auto;
-            padding: 20px 20px 40px 20px; /* Added extra bottom padding */
+            max-height: 80vh;
         }
 
         .instructions-content ul {
@@ -464,14 +860,14 @@
         }
 
         .instructions-content li {
-            background-color: rgba(0,0,0,0.1);
+            background-color: rgba(0, 0, 0, 0.1);
             margin: 8px 0;
             padding: 12px;
             border-radius: 6px;
         }
 
         .settings {
-            background-color: rgba(0,0,0,0.1);
+            background-color: rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             padding: 18px;
             margin-top: 15px;
@@ -479,7 +875,9 @@
             transition: background-color 0.3s ease, border-color 0.3s ease;
         }
 
-        select, input[type="range"], input[type="checkbox"] {
+        select,
+        input[type="range"],
+        input[type="checkbox"] {
             background-color: #004d56;
             border: 1px solid #007c8a;
             color: #fff;
@@ -517,132 +915,158 @@
             border-radius: 0;
             border: none;
         }
-        
+
         /* Enhanced touch targets in fullscreen */
         #braille-writer-app.fullscreen-mode .key.dot-key {
-            width: 90px; /* Increased from 75px */
-            height: 90px; /* Increased from 75px */
-            font-size: 15px; /* Slightly larger text */
+            min-width: 90px;
+            font-size: 15px;
         }
-        
+
         #braille-writer-app.fullscreen-mode .key.space-key {
-            width: 120px; /* Increased from 100px */
-            height: 90px; /* Increased from 75px */
+            min-width: 120px;
+            height: 75%;
+            align-self: flex-end;
         }
-        
+
         #braille-writer-app.fullscreen-mode .key.round-key {
-            width: 75px; /* Increased from 60px */
-            height: 75px; /* Increased from 60px */
-            font-size: 16px; /* Larger text for better readability */
+            min-width: 75px;
+            font-size: 16px;
+            height: 75%;
+            align-self: flex-end;
         }
-        
+
         #braille-writer-app.fullscreen-mode .key-container {
-            gap: 12px; /* Increased spacing between keys */
-            padding: 20px 12px; /* More padding for better layout */
+            gap: 12px;
+            /* Increased spacing between keys */
+            padding: 20px 12px;
+            /* More padding for better layout */
         }
-        
+
         /* Better drawer scrolling in fullscreen */
         #braille-writer-app.fullscreen-mode .instructions-drawer.open .instructions-content {
-            max-height: 400px; /* Larger in fullscreen to utilize space */
+            max-height: 400px;
+            /* Larger in fullscreen to utilize space */
         }
-        
+
         /* High Contrast Dark Mode */
         #braille-writer-app.high-contrast-dark {
             background-color: #121212;
             background-image: none;
             border-color: #333;
         }
+
         #braille-writer-app.high-contrast-dark .card-header {
             background-color: #1e1e1e;
             border-bottom-color: #333;
         }
+
         #braille-writer-app.high-contrast-dark .card-title {
             color: #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .small-button {
             background: #333;
             border-color: #555;
             color: #ffff00;
             text-shadow: none;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
         }
+
         #braille-writer-app.high-contrast-dark .small-button:hover {
             background: #444;
         }
+
         #braille-writer-app.high-contrast-dark .small-button:active {
             background: #222;
         }
+
         #braille-writer-app.high-contrast-dark .braille-grid {
             background-color: #000000;
             border-color: #444;
         }
+
         #braille-writer-app.high-contrast-dark .braille-dot-active {
             background: #ffff00;
             border-color: #ffff00;
             box-shadow: 0 0 5px #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .braille-dot-inactive {
             background: #222;
-            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
         }
+
         #braille-writer-app.high-contrast-dark .current-cell {
             background: rgba(255, 255, 0, 0.1);
         }
+
         #braille-writer-app.high-contrast-dark .current-cell::after {
             background: #ffff00;
             box-shadow: 0 0 6px #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .slider-container,
         #braille-writer-app.high-contrast-dark .key-container {
             background: #1e1e1e;
         }
+
         #braille-writer-app.high-contrast-dark .slider {
             background: #000;
         }
+
         #braille-writer-app.high-contrast-dark .slider::-webkit-slider-thumb {
             background: #ffff00;
             border-color: #333;
         }
+
         #braille-writer-app.high-contrast-dark .cell-count {
             color: #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .key {
             background: #222;
             color: #ffff00;
             border-color: #444;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1);
             outline: 2px solid #ffffff;
             outline-offset: -2px;
         }
+
         #braille-writer-app.high-contrast-dark .key:hover {
             background: #333;
         }
+
         #braille-writer-app.high-contrast-dark .key:active {
             background: #111;
         }
-        
+
         /* High contrast pressed state */
         #braille-writer-app.high-contrast-dark .key.pressed {
             background: #2a2a3a;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.7), inset 0 1px 1px rgba(255,255,255,0.1), 0 0 6px rgba(255, 255, 0, 0.2);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 6px rgba(255, 255, 0, 0.2);
             border-color: #3a3a4a;
         }
+
         #braille-writer-app.high-contrast-dark .instructions-drawer {
             background: #1e1e1e;
             border-top-color: #333;
         }
+
         #braille-writer-app.high-contrast-dark .instructions-toggle {
             background: #121212;
             border-bottom-color: #333;
             color: #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .instructions-content {
             color: #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark .settings {
             background-color: #121212;
             border-color: #333;
         }
+
         #braille-writer-app.high-contrast-dark select,
         #braille-writer-app.high-contrast-dark input[type="range"],
         #braille-writer-app.high-contrast-dark input[type="checkbox"] {
@@ -650,31 +1074,88 @@
             border-color: #444;
             color: #ffff00;
         }
+
         #braille-writer-app.high-contrast-dark input[type="checkbox"] {
             accent-color: #ffff00;
         }
-        
+
+        /* Dark mode for side toolbar */
+        #braille-writer-app.high-contrast-dark .side-toolbar {
+            background: linear-gradient(180deg, #1a1a1a, #0a0a0a);
+            border-right-color: #333;
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-title {
+            color: #ffff00;
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-btn {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            border-color: #444;
+            color: #ffff00;
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-btn:hover {
+            background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-btn.active {
+            background: linear-gradient(135deg, #444, #333);
+            border-color: #ffff00;
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-btn svg {
+            stroke: #ffff00;
+        }
+
+        #braille-writer-app.high-contrast-dark .toolbar-divider {
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 0, 0.3), transparent);
+        }
+
+        /* Dark mode for Feed Knob navigation button */
+        #braille-writer-app.high-contrast-dark .toolbar-nav-btn {
+            background: linear-gradient(135deg, rgba(50, 50, 50, 0.9), rgba(30, 30, 30, 0.9));
+            border-color: #555;
+        }
+
+        #braille-writer-app.high-contrast-dark .nav-half {
+            color: #ffff00;
+        }
+
+        #braille-writer-app.high-contrast-dark .nav-half:hover {
+            background: rgba(255, 255, 0, 0.2);
+        }
+
+        #braille-writer-app.high-contrast-dark .nav-half:active {
+            background: rgba(255, 255, 0, 0.1);
+        }
+
+        #braille-writer-app.high-contrast-dark .nav-label {
+            color: #ffff00;
+            background: rgba(0, 0, 0, 0.5);
+            border-top-color: rgba(255, 255, 0, 0.2);
+        }
+
+        #braille-writer-app.high-contrast-dark .nav-up {
+            border-bottom-color: rgba(255, 255, 0, 0.2);
+        }
+
         /* Rotary Handles */
+        /* Rotary Handles - Hidden to clear UI */
         .rotary-handle {
-            position: absolute;
-            top: 100px; /* Adjust vertical position */
-            width: 30px; /* Adjusted to user preference */
-            height: 80px; /* Adjusted to user preference */
-            background: linear-gradient(135deg, #4a4a4a, #2a2a2a);
-            border-radius: 8px; /* Slightly larger radius */
-            border: 1px solid #111;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.2);
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+            display: none;
         }
+
         .rotary-handle.left-handle {
-            left: -15px; /* Adjusted for new width */
+            left: -15px;
+            /* Adjusted for new width */
         }
+
         .rotary-handle.right-handle {
-            right: -15px; /* Adjusted for new width */
+            right: -15px;
+            /* Adjusted for new width */
         }
+
         .handle-part {
             flex: 1;
             display: flex;
@@ -682,10 +1163,13 @@
             justify-content: center;
             cursor: pointer;
             transition: background-color 0.1s ease;
-            color: rgba(255,255,255,0.6); /* Slightly more visible */
-            font-size: 16px; /* Increased from 12px */
+            color: rgba(255, 255, 255, 0.6);
+            /* Slightly more visible */
+            font-size: 16px;
+            /* Increased from 12px */
             font-weight: bold;
-            min-height: 35px; /* Adjusted for new height */
+            min-height: 35px;
+            /* Adjusted for new height */
             user-select: none;
             -webkit-user-select: none;
             -webkit-tap-highlight-color: transparent;
@@ -693,227 +1177,1027 @@
             -webkit-user-drag: none;
             position: relative;
         }
+
         .handle-part:hover {
-            background-color: rgba(255,255,255,0.15);
+            background-color: rgba(255, 255, 255, 0.15);
         }
+
         .handle-part:active {
-            background-color: rgba(0,0,0,0.3);
-            transform: scale(0.95); /* Visual feedback for touch */
+            background-color: rgba(0, 0, 0, 0.3);
+            transform: scale(0.95);
+            /* Visual feedback for touch */
         }
+
         .handle-up {
-            border-bottom: 1px solid rgba(0,0,0,0.3);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.3);
         }
+
         .handle-up::before {
             content: '';
             width: 0;
             height: 0;
             border-left: 6px solid transparent;
             border-right: 6px solid transparent;
-            border-bottom: 8px solid rgba(255,255,255,0.8);
+            border-bottom: 8px solid rgba(255, 255, 255, 0.8);
         }
+
         .handle-down::before {
             content: '';
             width: 0;
             height: 0;
             border-left: 6px solid transparent;
             border-right: 6px solid transparent;
-            border-top: 8px solid rgba(255,255,255,0.8);
+            border-top: 8px solid rgba(255, 255, 255, 0.8);
         }
 
 
         /* Responsive Design */
         @media (max-width: 840px) {
             .rotary-handle {
-                display: none; /* Hide handles on smaller screens to avoid overlap */
-            }
-        }
-        
-        /* Large screen optimizations for touch */
-        @media (min-width: 1200px) {
-            #braille-writer-app.fullscreen-mode .key.dot-key {
-                width: 100px;
-                height: 100px;
-                font-size: 16px;
-            }
-            
-            #braille-writer-app.fullscreen-mode .key.space-key {
-                width: 140px;
-                height: 100px;
-            }
-            
-            #braille-writer-app.fullscreen-mode .key.round-key {
-                width: 85px;
-                height: 85px;
-                font-size: 18px;
-            }
-            
-            #braille-writer-app.fullscreen-mode .key-container {
-                gap: 16px;
-                padding: 24px 16px;
-            }
-        }
-        
-        @media (max-width: 768px) {
-            .key-container {
-                flex-wrap: wrap;
-                gap: 4px;
-                padding: 10px 4px;
-            }
-            .key.dot-key { width: 65px; height: 65px; font-size: 11px; }
-            .key.space-key { width: 80px; height: 65px; }
-            .key.round-key { width: 48px; height: 48px; font-size: 12px; }
-            .card-header { padding: 12px 15px; }
-            .card-title { font-size: 18px; }
-            .small-button { font-size: 11px; padding: 5px 10px; }
-            
-            /* Better drawer scrolling on tablet */
-            .instructions-drawer.open .instructions-content {
-                max-height: 350px; /* Increased from 300px for tablets */
-                padding: 20px 20px 40px 20px; /* Extra bottom padding for tablets */
+                display: none;
+                /* Hide handles on smaller screens to avoid overlap */
             }
         }
 
+        /* Side toolbar responsive - tablet and smaller */
+        @media (max-width: 768px) {
+            .side-toolbar {
+                width: 50px;
+                min-width: 50px;
+                padding: 8px 3px;
+                gap: 6px;
+            }
+
+            .toolbar-title {
+                font-size: 9px;
+                margin-bottom: 5px;
+            }
+
+            .toolbar-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 7px;
+                border-radius: 8px;
+            }
+
+            .toolbar-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .key-container {
+                gap: 5px;
+                /* Tighter gap on tablet */
+                padding: 15px 5px;
+                min-height: 100px;
+            }
+
+            .key.dot-key {
+                font-size: 14px;
+            }
+
+            .key.space-key {
+                font-size: 14px;
+            }
+
+            .key.round-key {
+                font-size: 14px;
+            }
+
+            /* Better drawer scrolling on tablet */
+            .instructions-drawer.open .instructions-content {
+                max-height: 300px;
+                padding: 15px 15px 30px 15px;
+            }
+        }
+
+        /* Mobile phones */
+        /* Mobile phones */
         @media (max-width: 480px) {
-            .key.dot-key { width: 55px; height: 55px; font-size: 10px; }
-            .key.space-key { width: 70px; height: 55px; }
-            .key.round-key { width: 42px; height: 42px; font-size: 11px; }
-            .braille-grid { margin: 10px; }
-            .slider-container { margin: 0 10px 10px; }
-            .key-container { margin: 0 10px 10px; }
-            
+            .side-toolbar {
+                width: 48px;
+                min-width: 48px;
+                padding: 5px 2px;
+                gap: 4px;
+            }
+
+            .toolbar-title {
+                font-size: 7px;
+                letter-spacing: 0.3px;
+                display: none;
+                /* Hide title on very small screens to save space */
+            }
+
+            .toolbar-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 6px;
+                border-radius: 8px;
+                gap: 1px;
+            }
+
+            .toolbar-btn svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .toolbar-divider {
+                width: 60%;
+                margin: 2px 0;
+            }
+
+            .key.dot-key {
+                font-size: 11px;
+            }
+
+            .key.space-key {
+                font-size: 11px;
+            }
+
+            .key.round-key {
+                font-size: 10px;
+            }
+
+            .braille-grid {
+                margin: 6px;
+                padding: 6px;
+                flex-grow: 0;
+                flex-shrink: 1;
+                min-height: 80px;
+            }
+
+            .slider-container {
+                margin: 0 6px 6px;
+                padding: 4px 12px 4px 10px;
+            }
+
+            .key-container {
+                margin: 0 4px 6px;
+                padding: 8px 4px;
+                gap: 3px;
+                /* Tight gap on mobile */
+                min-height: 90px;
+            }
+
             /* Better drawer scrolling on mobile */
             .instructions-drawer.open .instructions-content {
-                max-height: 300px; /* Smaller on mobile to leave room for other content */
-                padding: 20px 20px 40px 20px; /* Extra bottom padding for mobile */
+                max-height: 250px;
+                padding: 12px 12px 25px 12px;
             }
-            
-            .header-buttons {
-                flex-wrap: wrap;
-                gap: 5px;
+        }
+
+        /* Large screen optimizations for touch */
+        @media (min-width: 1200px) {
+            .side-toolbar {
+                width: 70px;
             }
-            
-            .small-button {
+
+            .toolbar-btn {
+                width: 52px;
+                height: 52px;
                 font-size: 10px;
-                padding: 4px 8px;
+            }
+
+            .toolbar-btn svg {
+                width: 22px;
+                height: 22px;
+            }
+
+            .key.dot-key {
+                font-size: 18px;
+            }
+
+            .key.space-key {
+                font-size: 16px;
+            }
+
+            .key.round-key {
+                font-size: 16px;
+            }
+
+            .key-container {
+                gap: 16px;
+                padding: 25px 20px;
+                /* Remove max-width to allow full expansion */
+            }
+
+            #braille-writer-app.fullscreen-mode .key.dot-key {
+                font-size: 24px;
+                /* Remove fixed width/height constraints */
+                width: auto;
+                height: auto;
+            }
+
+            #braille-writer-app.fullscreen-mode .key.space-key {
+                font-size: 22px;
+                width: auto;
+                height: 75%;
+                align-self: flex-end;
+            }
+
+            #braille-writer-app.fullscreen-mode .key.round-key {
+                font-size: 22px;
+                width: auto;
+                height: 75%;
+                align-self: flex-end;
+            }
+
+            #braille-writer-app.fullscreen-mode .key-container {
+                gap: min(20px, 1.5vw);
+                padding: 35px 30px;
             }
         }
 
         @media (max-height: 600px) {
+
             /* For very short screens, limit drawer height even more */
             .instructions-drawer.open .instructions-content {
-                max-height: 250px;
-                padding: 20px 20px 40px 20px; /* Extra bottom padding for short screens */
+                max-height: 200px;
+                padding: 15px 15px 30px 15px;
+            }
+
+            .key.dot-key {
+                min-width: 60px;
+                min-height: 50px;
+            }
+
+            .key.space-key {
+                min-width: 80px;
+                min-height: 50px;
+                height: 75%;
+                align-self: flex-end;
+            }
+
+            .key.round-key {
+                min-width: 48px;
+                min-height: 40px;
+                height: 75%;
+                align-self: flex-end;
             }
         }
 
         @media (min-height: 800px) and (max-width: 1024px) {
+
             /* For tablets with good height, allow more drawer space */
             .instructions-drawer.open .instructions-content {
                 max-height: 450px;
-                padding: 20px 20px 50px 20px; /* Extra bottom padding for larger tablets */
+                padding: 20px 20px 50px 20px;
             }
-            
+
             /* In fullscreen on tablets, use even more space */
             #braille-writer-app.fullscreen-mode .instructions-drawer.open .instructions-content {
                 max-height: 500px;
-                padding: 20px 20px 50px 20px; /* Extra bottom padding in fullscreen */
+                padding: 20px 20px 50px 20px;
+                /* Extra bottom padding in fullscreen */
             }
         }
 
+        /* Landscape tablets and phones */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .braille-grid {
+                height: 35%;
+                min-height: 60px;
+                margin: 8px;
+                padding: 6px;
+            }
+
+            .key-container {
+                min-height: 80px;
+                padding: 8px 4px;
+                gap: 4px;
+            }
+
+            .key.dot-key {
+                min-width: 50px;
+                min-height: 40px;
+            }
+
+            .key.space-key,
+            .key.round-key {
+                min-width: 40px;
+                min-height: 35px;
+                height: 75%;
+            }
+
+            .slider-container {
+                margin: 0 6px 4px;
+                padding: 3px 10px;
+            }
+
+            .side-toolbar {
+                width: 45px;
+                min-width: 45px;
+                padding: 4px 2px;
+                gap: 3px;
+            }
+
+            .toolbar-btn {
+                width: 34px;
+                height: 34px;
+                font-size: 6px;
+            }
+
+            .toolbar-btn svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .instructions-drawer.open .instructions-content {
+                max-height: 150px;
+            }
+        }
+
+        /* Safe area support for notched devices (iPhone X+, etc.) */
+        @supports (padding: env(safe-area-inset-left)) {
+            .side-toolbar {
+                padding-left: max(3px, env(safe-area-inset-left));
+            }
+
+            .main-content {
+                padding-right: env(safe-area-inset-right);
+            }
+
+            .braille-grid {
+                margin-left: max(16px, env(safe-area-inset-left));
+                margin-right: max(16px, env(safe-area-inset-right));
+            }
+
+            .key-container {
+                padding-bottom: max(20px, env(safe-area-inset-bottom));
+            }
+
+            .splash-modal {
+                margin-left: env(safe-area-inset-left);
+                margin-right: env(safe-area-inset-right);
+            }
+        }
+
+        /* High DPI screen optimizations */
+        @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+            .braille-cell {
+                border-width: 0.5px;
+            }
+        }
+
+        /* Splash Screen / Welcome Modal */
+        .splash-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 1;
+            transition: opacity 0.4s ease;
+        }
+
+        .splash-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .splash-modal {
+            background: linear-gradient(145deg, #007c8a, #004d56);
+            border-radius: 20px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 124, 138, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.15);
+            animation: splashAppear 0.5s ease-out;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+
+        .splash-close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 32px;
+            height: 32px;
+            border: none;
+            background: rgba(255, 255, 255, 0.15);
+            color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .splash-close-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            transform: scale(1.1);
+        }
+
+        /* Webkit scrollbar styling for splash modal */
+        .splash-modal::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .splash-modal::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 0 20px 20px 0;
+        }
+
+        .splash-modal::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            border-radius: 10px;
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+
+        .splash-modal::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background-clip: padding-box;
+        }
+
+        @keyframes splashAppear {
+            from {
+                transform: scale(0.9) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .splash-header {
+            padding: 30px 30px 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .splash-header h1 {
+            margin: 0 0 8px;
+            font-size: 28px;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .splash-header .subtitle {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            margin: 0;
+        }
+
+        .splash-content {
+            padding: 25px 30px;
+            color: #fff;
+        }
+
+        .splash-content h2 {
+            font-size: 18px;
+            font-weight: 600;
+            margin: 0 0 12px;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .splash-content h2 svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .splash-content p {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0 0 20px;
+        }
+
+        .splash-content ul {
+            margin: 0 0 20px;
+            padding-left: 20px;
+        }
+
+        .splash-content li {
+            font-size: 14px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.85);
+            margin-bottom: 8px;
+        }
+
+        .splash-features {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .splash-feature {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 12px 15px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .splash-feature svg {
+            width: 24px;
+            height: 24px;
+            stroke: #4fd1c5;
+            fill: none;
+            stroke-width: 2;
+            flex-shrink: 0;
+        }
+
+        .splash-feature span {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .splash-footer {
+            padding: 20px 30px 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .splash-btn {
+            padding: 14px 24px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 150ms ease;
+            border: none;
+            text-align: center;
+        }
+
+        .splash-btn-primary {
+            background: linear-gradient(135deg, #4fd1c5, #38b2ac);
+            color: #004d56;
+            box-shadow: 0 4px 15px rgba(79, 209, 197, 0.4);
+        }
+
+        .splash-btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 209, 197, 0.5);
+        }
+
+        .splash-btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .splash-btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .splash-checkbox {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .splash-checkbox input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .splash-checkbox label {
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+        }
+
+        @media (max-width: 480px) {
+            .splash-modal {
+                width: 95%;
+                max-height: 90vh;
+            }
+
+            .splash-header {
+                padding: 20px 20px 15px;
+            }
+
+            .splash-header h1 {
+                font-size: 22px;
+            }
+
+            .splash-content {
+                padding: 20px;
+            }
+
+            .splash-features {
+                grid-template-columns: 1fr;
+            }
+
+            .splash-footer {
+                padding: 15px 20px 25px;
+            }
+        }
+
+        /* Accessibility - Focus styles for keyboard navigation */
+        *:focus-visible {
+            outline: 3px solid #00d4ff;
+            outline-offset: 2px;
+        }
+
+        .key:focus-visible,
+        .toolbar-btn:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 2px;
+            box-shadow: 0 0 0 5px rgba(0, 212, 255, 0.4);
+        }
+
+        /* Reduced motion support */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        /* Print stylesheet */
+        @media print {
+            .side-toolbar,
+            .key-container,
+            .slider-container,
+            .resizer-bar,
+            .splash-overlay,
+            .instructions-drawer {
+                display: none !important;
+            }
+
+            #braille-writer-app {
+                display: block;
+                height: auto;
+                background: white;
+            }
+
+            .main-content {
+                display: block;
+                height: auto;
+            }
+
+            .braille-grid {
+                height: auto !important;
+                border: 2px solid #000;
+                background: white;
+                margin: 0;
+                padding: 20px;
+                box-shadow: none;
+                overflow: visible;
+            }
+
+            .braille-cell {
+                border-color: #000;
+            }
+
+            .braille-dot.raised {
+                background: #000;
+            }
+        }
     </style>
 </head>
+
 <body>
-    <div id="braille-writer-app" class="card" tabindex="-1">
-        <div class="rotary-handle left-handle">
-            <div id="left-handle-up" class="handle-part handle-up"></div>
-            <div id="left-handle-down" class="handle-part handle-down"></div>
-        </div>
-        <div class="rotary-handle right-handle">
-            <div id="right-handle-up" class="handle-part handle-up"></div>
-            <div id="right-handle-down" class="handle-part handle-down"></div>
-        </div>
-        <!-- Braille viewport at the top -->
-        <div id="braille-grid" class="braille-grid"></div>
-        
-        <!-- Slider below viewport -->
-        <div class="slider-container">
-            <input type="range" id="slider" min="0" max="30" value="0" class="slider">
-            <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
-        </div>
-        
-        <!-- Keys below slider -->
-        <div class="key-container">
-            <button class="key round-key" id="linespace-btn">LS (a)</button>
-            <button class="key dot-key" id="dot3-btn">3 (s)</button>
-            <button class="key dot-key" id="dot2-btn">2 (d)</button>
-            <button class="key dot-key" id="dot1-btn">1 (f)</button>
-            <button class="key space-key" id="space-btn">Space (G/H)</button>
-            <button class="key dot-key" id="dot4-btn">4 (j)</button>
-            <button class="key dot-key" id="dot5-btn">5 (k)</button>
-            <button class="key dot-key" id="dot6-btn">6 (l)</button>
-            <button class="key round-key" id="backspace-btn">BS (;)</button>
-        </div>
-        
-        <!-- Instructions drawer -->
-        <div id="instructions-drawer" class="instructions-drawer">
-            <button id="instructions-toggle" class="instructions-toggle">Instructions & Settings</button>
-            <div class="instructions-content">
+    <!-- Splash Screen / Welcome Modal -->
+    <div id="splash-overlay" class="splash-overlay">
+        <div class="splash-modal">
+            <button id="splash-close-btn" class="splash-close-btn" title="Close">×</button>
+            <div class="splash-header">
+                <h1><img src="./braillesim.svg" alt="App Logo" style="width: 1.2em; height: 1.2em; vertical-align: middle; margin-right: 0.3em;"> Braille Writer Simulator</h1>
+                <p class="subtitle">Practice mechanical braille input without the machine</p>
+            </div>
+            
+            <div class="splash-content">
+                <h2>
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                    What is this app?
+                </h2>
+                <p>
+                    This simulator helps you practice inputting braille using the specific methods of a 
+                    <strong>Mechanical Braille Writer</strong>. It's designed for 
+                    sighted users who want to build motor memory and learn braille input techniques without 
+                    needing consistent access to an actual machine—and without wasting paper!
+                </p>
+
+                <h2>
+                    <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                    Key Features
+                </h2>
+                <div class="splash-features">
+                    <div class="splash-feature">
+                        <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Realistic key layout matching real braille writers</span>
+                    </div>
+                    <div class="splash-feature">
+                        <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                        <span>Audio feedback with authentic sounds</span>
+                    </div>
+                    <div class="splash-feature">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                        <span>Visual braille cell display</span>
+                    </div>
+                    <div class="splash-feature">
+                        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        <span>Save & load your practice sessions</span>
+                    </div>
+                </div>
+
+                <h2>
+                    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    Quick Start
+                </h2>
                 <ul>
-                    <li><strong>Key-to-Dot Mapping:</strong> F=dot1, D=dot2, S=dot3, J=dot4, K=dot5, L=dot6</li>
-                    <li><strong>Physical Layout:</strong> 3(S)-2(D)-1(F)-Space-4(J)-5(K)-6(L)</li>
-                    <li><strong>Braille Pattern:</strong> 1-4 (top), 2-5 (middle), 3-6 (bottom)</li>
-                    <li><strong>Space:</strong> G and/or H</li>
-                    <li><strong>Line Spacer:</strong> A</li>
-                    <li><strong>Backspacer:</strong> ;</li>
-                    <li><strong>Carriage Lever:</strong> ← → Arrow keys or slider</li>
-                    <li><strong>Braille Eraser:</strong> Erase Mode + click to flatten dots</li>
-                    <li><strong>Paper feeder Knob:</strong> ↑ ↓ Arrows</li>
+                    <li><strong>Keys 1-6:</strong> Press simultaneously to form braille characters using a keyboard or the touch keys</li>
+                    <li><strong>Space:</strong> Advance to the next cell</li>
+                    <li><strong>LS Key (Line Space):</strong> Move to a new line</li>
+                    <li><strong>BS Key (Backspace):</strong> Go back one cell</li>
+                    <li><strong>Erase Mode:</strong> Enable this mode and click or touch dots to erase them, as though smoothing them out with a braille eraser tool</li>
+                    <li><strong>Changing Lines:</strong> The up and down arrows shift the paper up and down, as though rolling the feeder knobs</li>
+                    <li><strong>Carriage Lever:</strong> Pull the carriage lever back to return to the beginning of a line, or place the embossing head as needed</li>
                 </ul>
-                <div class="settings">
-                    <div class="bell-settings">
-                        <label for="bell-warning">Warning Bell (spaces from end):</label>
-                        <select id="bell-warning">
-                            <option value="7" selected>7</option>
-                            <option value="6">6</option>
-                            <option value="5">5</option>
-                            <option value="4">4</option>
-                            <option value="3">3</option>
-                        </select>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-bell">Right Margin Bell:</label>
-                        <input type="checkbox" id="toggle-bell" checked>
-                    </div>
-                    <div class="toggle-settings">
-                        <label for="toggle-key-sound">Key Embossing Sound:</label>
-                        <input type="checkbox" id="toggle-key-sound" checked>
-                    </div>
-                    <div class="volume-settings">
-                        <label for="volume-control">Sound Volume:</label>
-                        <input type="range" id="volume-control" min="0" max="100" value="20">
+
+                <h2>
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    What the Simulator Does Not Do
+                </h2>
+                <p>
+                    Text will not automatically roll over to the next line while embossing. Listen for the bell to know 
+                    how many characters are left on a line, then use <strong>LS</strong> and pull the embossing head 
+                    back to the start of the next line.
+                </p>
+            </div>
+
+            <div class="splash-footer">
+                <button id="splash-how-to-use" class="splash-btn splash-btn-secondary">
+                    📖 How to Use (Detailed Instructions)
+                </button>
+                <button id="splash-start" class="splash-btn splash-btn-primary">
+                    Start Practicing
+                </button>
+                <div class="splash-checkbox">
+                    <input type="checkbox" id="splash-dont-show">
+                    <label for="splash-dont-show">Don't show this again</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="braille-writer-app" class="card" tabindex="-1">
+        <!-- Side Toolbar -->
+        <div class="side-toolbar">
+            <span class="toolbar-title">Braille Writer</span>
+            <div class="toolbar-divider"></div>
+
+            <!-- Combined Line Navigation Button -->
+            <div class="toolbar-nav-btn" title="Paper Feed Knob">
+                <button id="line-up-btn" class="nav-half nav-up" title="Move Up One Line">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="18,15 12,9 6,15" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <button id="line-down-btn" class="nav-half nav-down" title="Move Down One Line">
+                    <svg viewBox="0 0 24 24">
+                        <polyline points="6,9 12,15 18,9" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </button>
+                <span class="nav-label">Feed<br>Knob</span>
+            </div>
+
+            <div class="toolbar-divider"></div>
+
+            <!-- Install Button -->
+            <button id="install-btn" class="toolbar-btn install-btn hidden" title="Install App">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 15V3m0 12l-4-4m4 4l4-4M2 17l.621 2.485A2 2 0 0 0 4.561 21h14.878a2 2 0 0 0 1.94-1.515L22 17"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Install</span>
+            </button>
+
+            <!-- Erase Mode Button -->
+            <button id="erase-mode-btn" class="toolbar-btn" title="Toggle Erase Mode">
+                <svg viewBox="0 0 24 24">
+                    <path d="M20 20H7L3 16c-.7-.7-.7-1.8 0-2.5L14.6 2l5.9 5.9L9 19.3" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <path d="M6.4 12.4l5.2 5.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Erase</span>
+            </button>
+
+            <!-- All Clear Button -->
+            <button id="all-clear-btn" class="toolbar-btn" title="Clear All">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="3,6 5,6 21,6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Clear</span>
+            </button>
+
+            <!-- Fullscreen Button -->
+            <button id="fullscreen-btn" class="toolbar-btn" title="Toggle Fullscreen">
+                <svg viewBox="0 0 24 24">
+                    <polyline points="15,3 21,3 21,9" />
+                    <polyline points="9,21 3,21 3,15" />
+                    <line x1="21" y1="3" x2="14" y2="10" />
+                    <line x1="3" y1="21" x2="10" y2="14" />
+                </svg>
+                <span>Full</span>
+            </button>
+
+            <!-- Touch Keyboard Toggle Button -->
+            <button id="touch-keys-btn" class="toolbar-btn active" title="Toggle Touch Keyboard">
+                <svg viewBox="0 0 24 24">
+                    <rect x="2" y="4" width="20" height="16" rx="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="6" y1="8" x2="6" y2="8.01" stroke-linecap="round"/>
+                    <line x1="10" y1="8" x2="10" y2="8.01" stroke-linecap="round"/>
+                    <line x1="14" y1="8" x2="14" y2="8.01" stroke-linecap="round"/>
+                    <line x1="18" y1="8" x2="18" y2="8.01" stroke-linecap="round"/>
+                    <line x1="6" y1="12" x2="6" y2="12.01" stroke-linecap="round"/>
+                    <line x1="10" y1="12" x2="10" y2="12.01" stroke-linecap="round"/>
+                    <line x1="14" y1="12" x2="14" y2="12.01" stroke-linecap="round"/>
+                    <line x1="18" y1="12" x2="18" y2="12.01" stroke-linecap="round"/>
+                    <line x1="7" y1="16" x2="17" y2="16" stroke-linecap="round"/>
+                </svg>
+                <span>Keys</span>
+            </button>
+
+            <div class="toolbar-divider"></div>
+
+            <!-- Save Button -->
+            <button id="save-btn" class="toolbar-btn" title="Save Document">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    <polyline points="17,21 17,13 7,13 7,21" />
+                    <polyline points="7,3 7,8 15,8" />
+                </svg>
+                <span>Save</span>
+            </button>
+
+            <!-- Load Button -->
+            <button id="load-btn" class="toolbar-btn" title="Load Document">
+                <svg viewBox="0 0 24 24">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Load</span>
+            </button>
+
+            <div class="toolbar-divider"></div>
+
+            <!-- Dark Mode Button -->
+            <button id="dark-mode-btn" class="toolbar-btn" title="Toggle Dark Mode">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                </svg>
+                <span>Dark</span>
+            </button>
+
+            <!-- Settings/Help Button -->
+            <button id="settings-btn" class="toolbar-btn" title="Instructions & Settings">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="12" cy="12" r="3" />
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+                        stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <span>Setup</span>
+            </button>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <div class="rotary-handle left-handle">
+                <div id="left-handle-up" class="handle-part handle-up"></div>
+                <div id="left-handle-down" class="handle-part handle-down"></div>
+            </div>
+            <div class="rotary-handle right-handle">
+                <div id="right-handle-up" class="handle-part handle-up"></div>
+                <div id="right-handle-down" class="handle-part handle-down"></div>
+            </div>
+
+            <!-- Braille viewport at the top -->
+            <div id="braille-grid" class="braille-grid"></div>
+
+            <!-- Slider below viewport -->
+            <div class="slider-container">
+                <input type="range" id="slider" min="0" max="30" value="0" class="slider">
+                <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
+            </div>
+
+            <!-- Resizer bar - drag to adjust space between viewport and keys -->
+            <div id="resizer-bar" class="resizer-bar" role="separator"
+                aria-label="Drag to resize braille viewport and keyboard areas" aria-orientation="horizontal">
+                <div class="resizer-handle">
+                    <div class="resizer-handle-line"></div>
+                    <div class="resizer-handle-line"></div>
+                </div>
+            </div>
+
+            <!-- Keys below slider -->
+            <div class="key-container">
+                <button class="key round-key" id="linespace-btn">LS (a)</button>
+                <button class="key dot-key" id="dot3-btn">3 (s)</button>
+                <button class="key dot-key" id="dot2-btn">2 (d)</button>
+                <button class="key dot-key" id="dot1-btn">1 (f)</button>
+                <button class="key space-key" id="space-btn">Space (G/H)</button>
+                <button class="key dot-key" id="dot4-btn">4 (j)</button>
+                <button class="key dot-key" id="dot5-btn">5 (k)</button>
+                <button class="key dot-key" id="dot6-btn">6 (l)</button>
+                <button class="key round-key" id="backspace-btn">BS (;)</button>
+            </div>
+
+            <!-- Instructions drawer -->
+            <div id="instructions-drawer" class="instructions-drawer">
+                <button id="instructions-close" class="instructions-close-btn" title="Close">×</button>
+                <button id="instructions-toggle" class="instructions-toggle">Instructions & Settings</button>
+                <div class="instructions-content">
+                    <h2 style="margin: 0 0 15px 0; color: #4fd1c5; font-size: 1.3em; border-bottom: 1px solid rgba(79, 209, 197, 0.3); padding-bottom: 10px;">Setup & Reference</h2>
+                    
+                    <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Keyboard Controls</h3>
+                    <ul>
+                        <li><strong>Key-to-Dot Mapping:</strong> F=dot1, D=dot2, S=dot3, J=dot4, K=dot5, L=dot6</li>
+                        <li><strong>Braille Pattern:</strong> 1-4 (top), 2-5 (middle), 3-6 (bottom)</li>
+                        <li><strong>Space:</strong> G and/or H</li>
+                        <li><strong>Line Spacer:</strong> A</li>
+                        <li><strong>Backspacer:</strong> ;</li>
+                    </ul>
+                    
+                    <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Paper Navigation</h3>
+                    <ul>
+                        <li><strong>Carriage Lever:</strong> ← → Arrow keys or slider</li>
+                        <li><strong>Paper Feeder Knob:</strong> ↑ ↓ Arrows</li>
+                        <li><strong>Braille Eraser:</strong> Erase Mode + click to flatten dots</li>
+                    </ul>
+                    
+                    <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Sound Settings</h3>
+                    <div class="settings">
+                        <div class="toggle-settings" style="margin-bottom: 12px;">
+                            <label for="mute-all" style="font-weight: 600; color: #ff8a80;">🔇 Mute All Sounds:</label>
+                            <input type="checkbox" id="mute-all">
+                        </div>
+                        <div class="bell-settings">
+                            <label for="bell-warning">Warning Bell (spaces from end):</label>
+                            <select id="bell-warning">
+                                <option value="7" selected>7</option>
+                                <option value="6">6</option>
+                                <option value="5">5</option>
+                                <option value="4">4</option>
+                                <option value="3">3</option>
+                            </select>
+                        </div>
+                        <div class="toggle-settings">
+                            <label for="toggle-bell">Right Margin Bell:</label>
+                            <input type="checkbox" id="toggle-bell" checked>
+                        </div>
+                        <div class="toggle-settings">
+                            <label for="toggle-key-sound">Key Embossing Sound:</label>
+                            <input type="checkbox" id="toggle-key-sound" checked>
+                        </div>
+                        <div class="volume-settings">
+                            <label for="volume-control">Sound Volume:</label>
+                            <input type="range" id="volume-control" min="0" max="100" value="20">
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Header with title and controls at the bottom -->
-        <div class="card-header">
+
+        <!-- Hidden legacy header for compatibility -->
+        <div class="card-header" style="display:none;">
             <h2 id="braille-writer-simulator" class="card-title">Braille Writer Simulator</h2>
-            <div class="header-buttons">
-                <button id="install-btn" class="small-button install-button hidden">Install App</button>
-                <button id="save-btn" class="small-button">Save</button>
-                <button id="load-btn" class="small-button">Load</button>
-                <button id="dark-mode-btn" class="small-button">Dark Mode</button>
-                <button id="all-clear-btn" class="small-button">All Clear</button>
-                <button id="erase-mode-btn" class="small-button">Erase Mode</button>
-                <button id="fullscreen-btn" class="small-button">Full Screen</button>
-            </div>
+            <div class="header-buttons"></div>
         </div>
     </div>
 
     <script>
         // --- Application Constants and State ---
-        const ROWS = 20;
+        const LINES_PER_PAGE = 25; // Lines per braille page
+        let ROWS = 25; // Start with one page, can expand
         const COLS = 31;
         const EMPTY_CELL = [0, 0, 0, 0, 0, 0]; // Dots 1-6
 
@@ -941,10 +2225,13 @@
         let previousBellWarningPosition = -1;
         let isBellEnabled = true;
         let isKeySoundEnabled = true;
-        
+        let isMuted = false;
+
         // --- Performance Optimization State ---
         let cellElements = []; // To hold references to the cell and dot DOM elements
         let lastCursor = { row: -1, col: -1 }; // To track the last cursor position for efficient updates
+        let renderScheduled = false; // Prevent multiple render calls in the same frame
+        let lastGridState = null; // Track if grid actually changed
 
         // --- DOM Element References ---
         const brailleGrid = document.getElementById('braille-grid');
@@ -954,13 +2241,17 @@
         const toggleBell = document.getElementById('toggle-bell');
         const toggleKeySound = document.getElementById('toggle-key-sound');
         const volumeControl = document.getElementById('volume-control');
+        const muteAllCheckbox = document.getElementById('mute-all');
         const allClearBtn = document.getElementById('all-clear-btn');
         const eraseModeBtn = document.getElementById('erase-mode-btn');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const touchKeysBtn = document.getElementById('touch-keys-btn');
         const saveBtn = document.getElementById('save-btn');
         const loadBtn = document.getElementById('load-btn');
         const darkModeBtn = document.getElementById('dark-mode-btn');
         const installBtn = document.getElementById('install-btn');
+        const lineUpBtn = document.getElementById('line-up-btn');
+        const lineDownBtn = document.getElementById('line-down-btn');
         const leftHandleUp = document.getElementById('left-handle-up');
         const leftHandleDown = document.getElementById('left-handle-down');
         const rightHandleUp = document.getElementById('right-handle-up');
@@ -974,178 +2265,411 @@
         let brailleUnicodeMap = {};
         let unicodeBrailleMap = {};
 
-        // --- Audio Synthesis with Tone.js ---
-        let keySynth, bellSynth;
+        // --- Preferences Storage ---
+        const PREFS_KEY = 'brailleWriter_preferences';
+
+        function savePreferences() {
+            try {
+                const prefs = {
+                    bellWarningSpaces,
+                    isBellEnabled,
+                    isKeySoundEnabled,
+                    isMuted,
+                    volume: parseInt(volumeControl.value, 10),
+                    darkMode: document.getElementById('braille-writer-app').classList.contains('high-contrast-dark')
+                };
+                localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+            } catch (error) {
+                console.warn('Failed to save preferences:', error);
+            }
+        }
+
+        function loadPreferences() {
+            try {
+                const saved = localStorage.getItem(PREFS_KEY);
+                if (!saved) return;
+                
+                const prefs = JSON.parse(saved);
+                
+                // Apply sound settings
+                if (typeof prefs.bellWarningSpaces === 'number') {
+                    bellWarningSpaces = prefs.bellWarningSpaces;
+                    bellWarningSelect.value = prefs.bellWarningSpaces;
+                }
+                if (typeof prefs.isBellEnabled === 'boolean') {
+                    isBellEnabled = prefs.isBellEnabled;
+                    toggleBell.checked = prefs.isBellEnabled;
+                }
+                if (typeof prefs.isKeySoundEnabled === 'boolean') {
+                    isKeySoundEnabled = prefs.isKeySoundEnabled;
+                    toggleKeySound.checked = prefs.isKeySoundEnabled;
+                }
+                if (typeof prefs.isMuted === 'boolean') {
+                    isMuted = prefs.isMuted;
+                    muteAllCheckbox.checked = prefs.isMuted;
+                }
+                if (typeof prefs.volume === 'number') {
+                    volumeControl.value = prefs.volume;
+                    audioVolume = prefs.volume / 100;
+                }
+                
+                // Apply dark mode
+                if (prefs.darkMode) {
+                    const appElement = document.getElementById('braille-writer-app');
+                    appElement.classList.add('high-contrast-dark');
+                    darkModeBtn.classList.add('active');
+                    const btnSpan = darkModeBtn.querySelector('span');
+                    if (btnSpan) btnSpan.textContent = 'Light';
+                }
+            } catch (error) {
+                console.warn('Failed to load preferences:', error);
+            }
+        }
+
+        // --- Audio System with WAV Files ---
+        const sounds = {
+            key: null,        // Dot key press
+            ding: null,       // End-of-line bell warning
+            linespace: null,  // Line Space or Backspace
+            space: null,      // Space bar
+            updown: null      // Feed knob up/down
+        };
+        let audioVolume = 0.2; // Default 20%
 
         function initializeAudio() {
-            keySynth = new Tone.MembraneSynth({ pitchDecay: 0.01, octaves: 2, envelope: { attack: 0.001, decay: 0.2, sustain: 0.01, release: 0.2 } }).toDestination();
-            keySynth.volume.value = -15;
-            bellSynth = new Tone.Synth({ oscillator: { type: 'sine' }, envelope: { attack: 0.01, decay: 0.5, sustain: 0.1, release: 1 } }).toDestination();
-            bellSynth.volume.value = -10;
-            document.body.addEventListener('click', async () => { await Tone.start(); }, { once: true });
+            try {
+                // Preload all WAV sound files
+                sounds.key = new Audio('./sounds/key.wav');
+                sounds.ding = new Audio('./sounds/ding.wav');
+                sounds.linespace = new Audio('./sounds/linespace.wav');
+                sounds.space = new Audio('./sounds/space.wav');
+                sounds.updown = new Audio('./sounds/updown.wav');
+                
+                // Preload and set initial volume for all sounds
+                Object.values(sounds).forEach(audio => {
+                    if (audio) {
+                        audio.preload = 'auto';
+                        audio.volume = audioVolume;
+                    }
+                });
+            } catch (error) {
+                console.error('Failed to initialize audio:', error);
+                isKeySoundEnabled = false;
+                isBellEnabled = false;
+            }
         }
 
         function playSound(soundType) {
-            if (soundType === 'key' && isKeySoundEnabled) keySynth.triggerAttackRelease('C2', '8n');
-            if (soundType === 'ding' && isBellEnabled) bellSynth.triggerAttackRelease('A5', '8n');
+            try {
+                // Check if muted or sound is disabled
+                if (isMuted) return;
+                if (soundType === 'ding' && !isBellEnabled) return;
+                if (soundType !== 'ding' && !isKeySoundEnabled) return;
+                
+                const audio = sounds[soundType];
+                if (audio) {
+                    // Clone and play to allow overlapping sounds
+                    const audioClone = audio.cloneNode();
+                    audioClone.volume = audioVolume;
+                    audioClone.play().catch(err => {
+                        // Ignore autoplay errors - user interaction required
+                        console.debug('Audio play blocked:', err.message);
+                    });
+                }
+            } catch (error) {
+                console.warn('Failed to play sound:', error);
+            }
         }
 
         function updateVolume() {
-            const volumeValue = parseInt(volumeControl.value, 10);
-            const db = volumeValue === 0 ? -Infinity : (volumeValue / 100) * 40 - 40;
-            if (keySynth) keySynth.volume.value = db;
-            if (bellSynth) bellSynth.volume.value = db + 5;
+            try {
+                const volumeValue = parseInt(volumeControl.value, 10);
+                audioVolume = volumeValue / 100;
+                // Update volume on all preloaded sounds
+                Object.values(sounds).forEach(audio => {
+                    if (audio) audio.volume = audioVolume;
+                });
+            } catch (error) {
+                console.warn('Failed to update volume:', error);
+            }
         }
 
         // --- Core Application Logic ---
         function updateCellCount() {
-            cellCount.textContent = `Cell: ${cursor.col + 1} / ${COLS}`;
+            try {
+                if (cellCount && cursor) {
+                    const page = getPageNumber(cursor.row);
+                    const lineOnPage = (cursor.row % LINES_PER_PAGE) + 1;
+                    cellCount.textContent = `P${page} L${lineOnPage} | Cell: ${cursor.col + 1}/${COLS}`;
+                }
+            } catch (error) {
+                console.error('Error updating cell count:', error);
+            }
+        }
+
+        function addNewPage() {
+            // Add a new page worth of rows to the grid
+            const oldRows = ROWS;
+            ROWS += LINES_PER_PAGE;
+            
+            // Expand the grid data
+            for (let i = oldRows; i < ROWS; i++) {
+                grid.push(Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+            }
+            
+            // Re-render the entire grid with new rows
+            cellElements = [];
+            initialRender();
+            
+            showToast(`New page added (Page ${Math.ceil(ROWS / LINES_PER_PAGE)})`);
+        }
+
+        function getPageNumber(row) {
+            return Math.floor(row / LINES_PER_PAGE) + 1;
+        }
+
+        function isPageBreakRow(row) {
+            return row > 0 && row % LINES_PER_PAGE === 0;
         }
 
         function moveCursor(rowDelta, colDelta, rotate = false) {
-            cursor.row = Math.max(0, Math.min(ROWS - 1, cursor.row + rowDelta));
-            cursor.col = Math.max(0, Math.min(COLS - 1, cursor.col + colDelta));
-            slider.value = cursor.col;
-            updateCellCount();
-            renderBrailleGrid();
-            if (rotate) rotateSlider();
-            checkBellWarning();
+            try {
+                let newRow = cursor.row + rowDelta;
+                const newCol = Math.max(0, Math.min(COLS - 1, cursor.col + colDelta));
+
+                // Check if we need to add a new page
+                if (newRow >= ROWS) {
+                    addNewPage();
+                }
+                
+                // Clamp row to valid range
+                newRow = Math.max(0, Math.min(ROWS - 1, newRow));
+
+                // Only update if position actually changed
+                if (newRow !== cursor.row || newCol !== cursor.col) {
+                    cursor.row = newRow;
+                    cursor.col = newCol;
+                    slider.value = cursor.col;
+                    updateCellCount();
+                    renderBrailleGrid();
+                    if (rotate) rotateSlider();
+                    checkBellWarning();
+                }
+            } catch (error) {
+                console.error('Error moving cursor:', error);
+            }
         }
-        
+
         function handleAction(action) {
-            switch (action) {
-                case 'linespace':
-                    moveCursor(1, 0); // Move down one line, same column
-                    playSound('key');
-                    break;
-                case 'backspace':
-                    if (cursor.col > 0) {
-                        moveCursor(0, -1);
-                        playSound('key');
-                    }
-                    break;
-                case 'space':
-                    moveCursor(0, 1);
-                    playSound('key');
-                    break;
-                case 'up': moveCursor(-1, 0); break;
-                case 'down': moveCursor(1, 0); break;
-                case 'left': moveCursor(0, -1, true); break;
-                case 'right': moveCursor(0, 1, true); break;
+            try {
+                switch (action) {
+                    case 'linespace':
+                        moveCursor(1, 0); // Move down one line, same column
+                        playSound('linespace');
+                        break;
+                    case 'backspace':
+                        if (cursor.col > 0) {
+                            moveCursor(0, -1);
+                            playSound('linespace');
+                        }
+                        break;
+                    case 'space':
+                        moveCursor(0, 1);
+                        playSound('space');
+                        break;
+                    case 'up':
+                        moveCursor(-1, 0);
+                        playSound('updown');
+                        break;
+                    case 'down':
+                        moveCursor(1, 0);
+                        playSound('updown');
+                        break;
+                    case 'left':
+                        moveCursor(0, -1, true);
+                        break;
+                    case 'right':
+                        moveCursor(0, 1, true);
+                        break;
+                    default:
+                        console.warn(`Unknown action: ${action}`);
+                }
+            } catch (error) {
+                console.error('Error handling action:', action, error);
             }
         }
 
         function handleKeyDown(e) {
-            const key = e.key.toLowerCase();
-            // FIX: Check if e.target exists and has the 'matches' method before calling it.
-            if (e.target && typeof e.target.matches === 'function' && e.target.matches('input, select')) {
-                return;
-            }
-            e.preventDefault();
-            const action = keyMap[key];
-
-            if (action !== undefined && !activeKeys.has(key)) {
-                activeKeys.add(key);
-                clusterKeys.add(key); // Track key for chording
-
-                // Add visual feedback for pressed keys
-                if (dotKeys.has(key) || spaceKeys.has(key) || ['a', ';'].includes(key)) {
-                    addKeyPressedFeedback(key);
+            try {
+                const key = e.key.toLowerCase();
+                // Check if e.target exists and has the 'matches' method before calling it.
+                if (e.target && typeof e.target.matches === 'function' && e.target.matches('input, select')) {
+                    return;
                 }
+                e.preventDefault();
+                const action = keyMap[key];
 
-                if (typeof action === 'number') {
-                    grid[cursor.row][cursor.col][action] = 1;
-                    renderBrailleGrid();
-                } else if (movementKeys.has(key)) {
-                     handleAction(action);
-                     startContinuousMovement(action);
+                if (action !== undefined && !activeKeys.has(key)) {
+                    activeKeys.add(key);
+                    clusterKeys.add(key); // Track key for chording
+
+                    // Add visual feedback for pressed keys
+                    if (dotKeys.has(key) || spaceKeys.has(key) || ['a', ';'].includes(key)) {
+                        addKeyPressedFeedback(key);
+                    }
+
+                    if (typeof action === 'number') {
+                        // Validate cursor position before updating grid
+                        if (cursor.row >= 0 && cursor.row < ROWS && cursor.col >= 0 && cursor.col < COLS) {
+                            grid[cursor.row][cursor.col][action] = 1;
+                            renderBrailleGrid();
+                        }
+                    } else if (movementKeys.has(key)) {
+                        handleAction(action);
+                        startContinuousMovement(action);
+                    }
                 }
+            } catch (error) {
+                console.error('Error handling key down:', error);
             }
         }
 
         function handleKeyUp(e) {
-            const key = e.key.toLowerCase();
-            const action = keyMap[key];
+            try {
+                const key = e.key.toLowerCase();
+                const action = keyMap[key];
 
-            if (action !== undefined) {
-                activeKeys.delete(key);
-                clearInterval(movementInterval);
+                if (action !== undefined) {
+                    activeKeys.delete(key);
+                    clearInterval(movementInterval);
 
-                // Remove visual feedback for pressed keys
-                if (dotKeys.has(key) || spaceKeys.has(key) || ['a', ';'].includes(key)) {
-                    removeKeyPressedFeedback(key);
-                }
-
-                if (activeKeys.size === 0) {
-                    const wasDotOrSpaceChord = Array.from(clusterKeys).some(k => dotKeys.has(k) || spaceKeys.has(k));
-                    
-                    if (wasDotOrSpaceChord) {
-                        moveCursor(0, 1);
-                        playSound('key');
-                    } else if (action === 'linespace' || action === 'backspace') {
-                        handleAction(action);
+                    // Remove visual feedback for pressed keys
+                    if (dotKeys.has(key) || spaceKeys.has(key) || ['a', ';'].includes(key)) {
+                        removeKeyPressedFeedback(key);
                     }
-                    
-                    clusterKeys.clear(); // Reset for next chord
+
+                    if (activeKeys.size === 0) {
+                        const wasDotOrSpaceChord = Array.from(clusterKeys).some(k => dotKeys.has(k) || spaceKeys.has(k));
+
+                        if (wasDotOrSpaceChord) {
+                            moveCursor(0, 1);
+                            // Play 'key' sound for dot presses, 'space' sound for space-only input
+                            const hadDotKeys = Array.from(clusterKeys).some(k => dotKeys.has(k));
+                            playSound(hadDotKeys ? 'key' : 'space');
+                        } else if (action === 'linespace' || action === 'backspace') {
+                            handleAction(action);
+                        }
+
+                        clusterKeys.clear(); // Reset for next chord
+                    }
                 }
+            } catch (error) {
+                console.error('Error handling key up:', error);
             }
         }
-        
+
         function startContinuousMovement(action) {
-            if (!movementKeys.has(action)) return;
-            clearInterval(movementInterval);
-            movementInterval = setInterval(() => handleAction(action), 100);
+            try {
+                if (!movementKeys.has(action)) return;
+                clearInterval(movementInterval);
+                movementInterval = setInterval(() => {
+                    try {
+                        handleAction(action);
+                    } catch (error) {
+                        console.error('Error in continuous movement:', error);
+                        clearInterval(movementInterval);
+                    }
+                }, 100);
+            } catch (error) {
+                console.error('Error starting continuous movement:', error);
+            }
         }
 
         function checkBellWarning() {
-            const warningPosition = COLS - bellWarningSpaces - 1;
-            if (cursor.col === warningPosition && previousBellWarningPosition !== cursor.col) {
-                playSound('ding');
-                previousBellWarningPosition = cursor.col;
-            }
-            if (cursor.col !== warningPosition) {
-                previousBellWarningPosition = -1;
+            try {
+                const warningPosition = COLS - bellWarningSpaces - 1;
+                if (cursor.col === warningPosition && previousBellWarningPosition !== cursor.col) {
+                    playSound('ding');
+                    previousBellWarningPosition = cursor.col;
+                }
+                if (cursor.col !== warningPosition) {
+                    previousBellWarningPosition = -1;
+                }
+            } catch (error) {
+                console.error('Error checking bell warning:', error);
             }
         }
 
         function rotateSlider() {
-            clearTimeout(sliderTimeout);
-            slider.classList.add('rotated');
-            sliderTimeout = setTimeout(() => slider.classList.remove('rotated'), 500);
+            try {
+                clearTimeout(sliderTimeout);
+                if (slider && slider.classList) {
+                    slider.classList.add('rotated');
+                    sliderTimeout = setTimeout(() => {
+                        try {
+                            if (slider && slider.classList) {
+                                slider.classList.remove('rotated');
+                            }
+                        } catch (error) {
+                            console.error('Error removing rotated class:', error);
+                        }
+                    }, 500);
+                }
+            } catch (error) {
+                console.error('Error rotating slider:', error);
+            }
         }
-        
+
         function eraseDot(rowIndex, colIndex, dotIndex) {
-            if (grid[rowIndex][colIndex][dotIndex] === 1) {
-                grid[rowIndex][colIndex][dotIndex] = 0;
-                renderBrailleGrid();
+            try {
+                // Validate indices
+                if (rowIndex < 0 || rowIndex >= ROWS || colIndex < 0 || colIndex >= COLS || dotIndex < 0 || dotIndex >= 6) {
+                    console.warn(`Invalid indices for eraseDot: ${rowIndex}, ${colIndex}, ${dotIndex}`);
+                    return;
+                }
+
+                if (grid[rowIndex][colIndex][dotIndex] === 1) {
+                    grid[rowIndex][colIndex][dotIndex] = 0;
+                    renderBrailleGrid();
+                }
+            } catch (error) {
+                console.error('Error erasing dot:', error);
             }
         }
 
         // --- Visual Key Feedback Functions ---
         function addKeyPressedFeedback(key) {
-            const buttonId = getButtonIdFromKey(key);
-            if (buttonId) {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    button.classList.add('pressed');
+            try {
+                const buttonId = getButtonIdFromKey(key);
+                if (buttonId) {
+                    const button = document.getElementById(buttonId);
+                    if (button && button.classList) {
+                        button.classList.add('pressed');
+                    }
                 }
+            } catch (error) {
+                console.error('Error adding key pressed feedback:', error);
             }
         }
 
         function removeKeyPressedFeedback(key) {
-            const buttonId = getButtonIdFromKey(key);
-            if (buttonId) {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    button.classList.remove('pressed');
+            try {
+                const buttonId = getButtonIdFromKey(key);
+                if (buttonId) {
+                    const button = document.getElementById(buttonId);
+                    if (button && button.classList) {
+                        button.classList.remove('pressed');
+                    }
                 }
+            } catch (error) {
+                console.error('Error removing key pressed feedback:', error);
             }
         }
 
         function getButtonIdFromKey(key) {
             const keyToButtonMap = {
                 'f': 'dot1-btn',
-                'd': 'dot2-btn', 
+                'd': 'dot2-btn',
                 's': 'dot3-btn',
                 'j': 'dot4-btn',
                 'k': 'dot5-btn',
@@ -1158,10 +2682,55 @@
             return keyToButtonMap[key] || null;
         }
 
+        // --- Braille Cell Scaling ---
+        function updateCellScaling() {
+            if (!brailleGrid) return;
+            
+            // Base sizes
+            const baseCellWidth = 20;
+            const baseCellHeight = 28;
+            const baseCellMargin = 2;
+            const baseDotSize = 7;
+            const baseDotGap = 3;
+            const baseRowMargin = 8;
+            
+            // Get available space
+            const gridRect = brailleGrid.getBoundingClientRect();
+            const availableWidth = gridRect.width - 32; // Account for padding (16px each side)
+            
+            // Calculate scale based on WIDTH only - cells should fill horizontally and scroll vertically
+            const totalCellWidth = baseCellWidth + (baseCellMargin * 2);
+            const scale = availableWidth / (COLS * totalCellWidth);
+            
+            // Clamp scale to reasonable limits (minimum 0.8x so it's never too tiny)
+            const clampedScale = Math.max(0.8, Math.min(scale, 3.0));
+            
+            // Apply scaled values as CSS custom properties
+            brailleGrid.style.setProperty('--cell-scale', clampedScale);
+            brailleGrid.style.setProperty('--cell-width', `${Math.round(baseCellWidth * clampedScale)}px`);
+            brailleGrid.style.setProperty('--cell-height', `${Math.round(baseCellHeight * clampedScale)}px`);
+            brailleGrid.style.setProperty('--cell-margin', `${Math.round(baseCellMargin * clampedScale)}px`);
+            brailleGrid.style.setProperty('--dot-size', `${Math.round(baseDotSize * clampedScale)}px`);
+            brailleGrid.style.setProperty('--dot-gap', `${Math.round(baseDotGap * clampedScale)}px`);
+            brailleGrid.style.setProperty('--row-margin', `${Math.round(baseRowMargin * clampedScale)}px`);
+        }
+
+        // Debounced resize handler
+        let resizeTimeout;
+        function handleResize() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(updateCellScaling, 100);
+        }
+
         // --- OPTIMIZED Rendering ---
 
         function renderBrailleGrid() {
+            // Prevent multiple render calls in the same frame
+            if (renderScheduled) return;
+
+            renderScheduled = true;
             requestAnimationFrame(() => {
+                renderScheduled = false;
                 if (cellElements.length === 0) {
                     initialRender();
                 } else {
@@ -1171,70 +2740,119 @@
         }
 
         function initialRender() {
-            const fragment = document.createDocumentFragment();
-            for (let i = 0; i < ROWS; i++) {
-                const rowEl = document.createElement('div');
-                rowEl.className = 'braille-row';
-                const rowCells = [];
-                for (let j = 0; j < COLS; j++) {
-                    const cellEl = document.createElement('div');
-                    cellEl.className = 'braille-cell';
+            try {
+                const fragment = document.createDocumentFragment();
+                for (let i = 0; i < ROWS; i++) {
+                    const rowEl = document.createElement('div');
+                    rowEl.className = 'braille-row';
                     
-                    const dotContainer = document.createElement('div');
-                    dotContainer.className = 'braille-dot-container';
+                    // Add page break styling for rows at page boundaries
+                    if (isPageBreakRow(i)) {
+                        rowEl.classList.add('page-break');
+                        rowEl.dataset.page = `Page ${getPageNumber(i)}`;
+                    }
                     
-                    const dots = [];
-                    [0, 3, 1, 4, 2, 5].forEach(dotIndex => {
-                        const dotEl = document.createElement('div');
-                        dotEl.className = 'braille-dot braille-dot-inactive';
-                        dotEl.dataset.row = i;
-                        dotEl.dataset.col = j;
-                        dotEl.dataset.dotIndex = dotIndex;
-                        dotContainer.appendChild(dotEl);
-                        dots.push(dotEl);
-                    });
-                    
-                    cellEl.appendChild(dotContainer);
-                    rowEl.appendChild(cellEl);
-                    rowCells.push({ cellEl, dots });
+                    const rowCells = [];
+                    for (let j = 0; j < COLS; j++) {
+                        const cellEl = document.createElement('div');
+                        cellEl.className = 'braille-cell';
+
+                        const dotContainer = document.createElement('div');
+                        dotContainer.className = 'braille-dot-container';
+
+                        const dots = [];
+                        [0, 3, 1, 4, 2, 5].forEach(dotIndex => {
+                            const dotEl = document.createElement('div');
+                            dotEl.className = 'braille-dot braille-dot-inactive';
+                            dotEl.dataset.row = i;
+                            dotEl.dataset.col = j;
+                            dotEl.dataset.dotIndex = dotIndex;
+                            dotContainer.appendChild(dotEl);
+                            dots.push(dotEl);
+                        });
+
+                        cellEl.appendChild(dotContainer);
+                        rowEl.appendChild(cellEl);
+                        rowCells.push({ cellEl, dots });
+                    }
+                    fragment.appendChild(rowEl);
+                    cellElements.push(rowCells);
                 }
-                fragment.appendChild(rowEl);
-                cellElements.push(rowCells);
+
+                if (brailleGrid) {
+                    brailleGrid.innerHTML = '';
+                    brailleGrid.appendChild(fragment);
+                    updateRender();
+                }
+            } catch (error) {
+                console.error('Error in initial render:', error);
+                showToast('Failed to initialize Braille grid', true);
             }
-            brailleGrid.innerHTML = '';
-            brailleGrid.appendChild(fragment);
-            updateRender();
         }
 
         function updateRender() {
-            if (lastCursor.row !== -1 && (lastCursor.row !== cursor.row || lastCursor.col !== cursor.col)) {
-                if (cellElements[lastCursor.row] && cellElements[lastCursor.row][lastCursor.col]) {
-                    cellElements[lastCursor.row][lastCursor.col].cellEl.classList.remove('current-cell');
-                }
-            }
+            // Clear ALL current-cell classes to prevent ghost cursors
+            const existingCursors = brailleGrid.querySelectorAll('.current-cell');
+            existingCursors.forEach(el => el.classList.remove('current-cell'));
+
+            // Batch DOM updates for better performance
+            const updates = [];
+            let hasChanges = false;
 
             for (let i = 0; i < ROWS; i++) {
                 for (let j = 0; j < COLS; j++) {
                     const cellData = grid[i][j];
                     const cellDOM = cellElements[i][j];
+
+                    // Safety check
+                    if (!cellDOM || !cellDOM.dots) {
+                        console.warn(`Missing cell DOM at position ${i},${j}`);
+                        continue;
+                    }
+
                     const dotOrder = [0, 3, 1, 4, 2, 5];
-                    for(let k = 0; k < 6; k++) {
+                    for (let k = 0; k < 6; k++) {
                         const dotIndex = dotOrder[k];
                         const dotEl = cellDOM.dots[k];
+
+                        // Safety check
+                        if (!dotEl) {
+                            console.warn(`Missing dot element at position ${i},${j},${k}`);
+                            continue;
+                        }
+
                         const shouldBeActive = cellData[dotIndex] === 1;
                         const isCurrentlyActive = dotEl.classList.contains('braille-dot-active');
 
                         if (shouldBeActive && !isCurrentlyActive) {
-                            dotEl.classList.remove('braille-dot-inactive');
-                            dotEl.classList.add('braille-dot-active');
+                            updates.push(() => {
+                                dotEl.classList.remove('braille-dot-inactive');
+                                dotEl.classList.add('braille-dot-active');
+                            });
+                            hasChanges = true;
                         } else if (!shouldBeActive && isCurrentlyActive) {
-                            dotEl.classList.remove('braille-dot-active');
-                            dotEl.classList.add('braille-dot-inactive');
+                            updates.push(() => {
+                                dotEl.classList.remove('braille-dot-active');
+                                dotEl.classList.add('braille-dot-inactive');
+                            });
+                            hasChanges = true;
                         }
                     }
                 }
             }
-            
+
+            // Apply all updates in a single batch if there are changes
+            if (hasChanges) {
+                updates.forEach(update => {
+                    try {
+                        update();
+                    } catch (error) {
+                        console.error('Error updating dot element:', error);
+                    }
+                });
+            }
+
+            // Update cursor position
             if (cellElements[cursor.row] && cellElements[cursor.row][cursor.col]) {
                 cellElements[cursor.row][cursor.col].cellEl.classList.add('current-cell');
             }
@@ -1244,113 +2862,169 @@
 
             scrollToCursor();
         }
-        
+
         function scrollToCursor() {
-            const currentCell = brailleGrid.querySelector('.current-cell');
-            if (currentCell) {
-                currentCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+            try {
+                const currentCell = brailleGrid.querySelector('.current-cell');
+                if (currentCell && currentCell.scrollIntoView) {
+                    currentCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                }
+            } catch (error) {
+                console.error('Error scrolling to cursor:', error);
             }
         }
-        
+
         // --- UI Feedback ---
         function showToast(message, isError = false) {
-            const toast = document.createElement('div');
-            toast.textContent = message;
-            toast.style.position = 'fixed';
-            toast.style.bottom = '20px';
-            toast.style.left = '50%';
-            toast.style.transform = 'translateX(-50%)';
-            toast.style.backgroundColor = isError ? '#e62e2e' : '#4CAF50';
-            toast.style.color = 'white';
-            toast.style.padding = '12px 20px';
-            toast.style.borderRadius = '8px';
-            toast.style.zIndex = '10000';
-            toast.style.opacity = '0';
-            toast.style.transition = 'opacity 0.5s ease';
-            document.body.appendChild(toast);
-            setTimeout(() => { toast.style.opacity = '1'; }, 100);
-            setTimeout(() => {
+            try {
+                const toast = document.createElement('div');
+                toast.textContent = message;
+                toast.style.position = 'fixed';
+                toast.style.bottom = '20px';
+                toast.style.left = '50%';
+                toast.style.transform = 'translateX(-50%)';
+                toast.style.backgroundColor = isError ? '#e62e2e' : '#4CAF50';
+                toast.style.color = 'white';
+                toast.style.padding = '12px 20px';
+                toast.style.borderRadius = '8px';
+                toast.style.zIndex = '10000';
                 toast.style.opacity = '0';
-                setTimeout(() => { document.body.removeChild(toast); }, 500);
-            }, 3000);
+                toast.style.transition = 'opacity 0.5s ease';
+
+                if (document.body) {
+                    document.body.appendChild(toast);
+                    setTimeout(() => {
+                        try {
+                            if (toast.style) toast.style.opacity = '1';
+                        } catch (error) {
+                            console.error('Error showing toast:', error);
+                        }
+                    }, 100);
+                    setTimeout(() => {
+                        try {
+                            if (toast.style) toast.style.opacity = '0';
+                            setTimeout(() => {
+                                try {
+                                    if (document.body && document.body.contains(toast)) {
+                                        document.body.removeChild(toast);
+                                    }
+                                } catch (error) {
+                                    console.error('Error removing toast:', error);
+                                }
+                            }, 500);
+                        } catch (error) {
+                            console.error('Error hiding toast:', error);
+                        }
+                    }, 3000);
+                }
+            } catch (error) {
+                console.error('Error creating toast:', error);
+                // Fallback to console log if toast creation fails
+                console.log(message);
+            }
         }
 
         // --- Save and Load Functionality ---
         function generateBrailleUnicodeMaps() {
-            for (let i = 0; i < 64; i++) { // 2^6 = 64 combinations for 6 dots
-                const char = String.fromCharCode(0x2800 + i);
-                const dots = [
-                    (i & 1) ? 1 : 0,  // dot 1
-                    (i & 2) ? 1 : 0,  // dot 2
-                    (i & 4) ? 1 : 0,  // dot 3
-                    (i & 8) ? 1 : 0,  // dot 4
-                    (i & 16) ? 1 : 0, // dot 5
-                    (i & 32) ? 1 : 0, // dot 6
-                ];
-                const key = dots.join('');
-                brailleUnicodeMap[key] = char;
-                unicodeBrailleMap[char] = dots;
+            try {
+                for (let i = 0; i < 64; i++) { // 2^6 = 64 combinations for 6 dots
+                    const char = String.fromCharCode(0x2800 + i);
+                    const dots = [
+                        (i & 1) ? 1 : 0,  // dot 1
+                        (i & 2) ? 1 : 0,  // dot 2
+                        (i & 4) ? 1 : 0,  // dot 3
+                        (i & 8) ? 1 : 0,  // dot 4
+                        (i & 16) ? 1 : 0, // dot 5
+                        (i & 32) ? 1 : 0, // dot 6
+                    ];
+                    const key = dots.join('');
+                    brailleUnicodeMap[key] = char;
+                    unicodeBrailleMap[char] = dots;
+                }
+                console.log('Braille Unicode maps generated successfully');
+            } catch (error) {
+                console.error('Failed to generate Braille Unicode maps:', error);
+                // Initialize with empty maps as fallback
+                brailleUnicodeMap = {};
+                unicodeBrailleMap = {};
             }
         }
 
         function saveBraille() {
-            let unicodeString = '';
-            for (let i = 0; i < ROWS; i++) {
-                let line = '';
-                for (let j = 0; j < COLS; j++) {
-                    const key = grid[i][j].join('');
-                    line += brailleUnicodeMap[key] || '⠀';
+            try {
+                let unicodeString = '';
+                for (let i = 0; i < ROWS; i++) {
+                    let line = '';
+                    for (let j = 0; j < COLS; j++) {
+                        const key = grid[i][j].join('');
+                        line += brailleUnicodeMap[key] || '⠀';
+                    }
+                    unicodeString += line + '\n';
                 }
-                unicodeString += line + '\n';
+
+                const blob = new Blob([unicodeString.trimEnd()], { type: 'text/plain;charset=utf-8' });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'braille_document.txt';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // Clean up the URL object
+                setTimeout(() => URL.revokeObjectURL(a.href), 100);
+
+                showToast('Document saved!');
+            } catch (error) {
+                console.error('Failed to save document:', error);
+                showToast('Failed to save document', true);
             }
-            
-            const blob = new Blob([unicodeString.trimEnd()], { type: 'text/plain;charset=utf-8' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'braille_document.txt';
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            showToast('Document saved!');
         }
 
         function loadBraille() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.txt';
-            input.onchange = e => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = event => {
-                    try {
-                        const text = event.target.result;
-                        const lines = text.split('\n');
-                        
-                        const newGrid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
-                        
-                        for (let i = 0; i < Math.min(lines.length, ROWS); i++) {
-                            for (let j = 0; j < Math.min(lines[i].length, COLS); j++) {
-                                const char = lines[i][j];
-                                if (unicodeBrailleMap[char]) {
-                                    newGrid[i][j] = unicodeBrailleMap[char];
+            try {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.txt';
+                input.onchange = e => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = event => {
+                        try {
+                            const text = event.target.result;
+                            const lines = text.split('\n');
+
+                            const newGrid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+
+                            for (let i = 0; i < Math.min(lines.length, ROWS); i++) {
+                                for (let j = 0; j < Math.min(lines[i].length, COLS); j++) {
+                                    const char = lines[i][j];
+                                    if (unicodeBrailleMap[char]) {
+                                        newGrid[i][j] = unicodeBrailleMap[char];
+                                    }
                                 }
                             }
+                            grid = newGrid;
+                            cursor = { row: 0, col: 0 };
+                            renderBrailleGrid();
+                            showToast('Document loaded successfully!');
+                        } catch (error) {
+                            showToast('Failed to load file. Please check the format.', true);
+                            console.error("Error loading file:", error);
                         }
-                        grid = newGrid;
-                        cursor = { row: 0, col: 0 };
-                        renderBrailleGrid();
-                        showToast('Document loaded successfully!');
-                    } catch (error) {
-                        showToast('Failed to load file. Please check the format.', true);
-                        console.error("Error loading file:", error);
-                    }
+                    };
+                    reader.onerror = () => {
+                        showToast('Failed to read file', true);
+                    };
+                    reader.readAsText(file);
                 };
-                reader.readAsText(file);
-            };
-            input.click();
+                input.click();
+            } catch (error) {
+                console.error('Failed to create file input:', error);
+                showToast('Failed to open file dialog', true);
+            }
         }
 
         // --- PWA Functionality ---
@@ -1360,19 +3034,22 @@
                     navigator.serviceWorker.register('./sw.js')
                         .then((registration) => {
                             console.log('SW registered: ', registration);
-                            
+
                             // Check for updates
                             registration.addEventListener('updatefound', () => {
                                 const newWorker = registration.installing;
-                                newWorker.addEventListener('statechange', () => {
-                                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                                        showToast('App updated! Refresh to see changes.');
-                                    }
-                                });
+                                if (newWorker) {
+                                    newWorker.addEventListener('statechange', () => {
+                                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                            showToast('App updated! Refresh to see changes.');
+                                        }
+                                    });
+                                }
                             });
                         })
                         .catch((registrationError) => {
                             console.log('SW registration failed: ', registrationError);
+                            // Don't show error to user, app will work without SW
                         });
                 });
             }
@@ -1394,10 +3071,10 @@
                 if (deferredPrompt) {
                     // Show the install prompt
                     deferredPrompt.prompt();
-                    
+
                     // Wait for the user to respond to the prompt
                     const { outcome } = await deferredPrompt.userChoice;
-                    
+
                     if (outcome === 'accepted') {
                         console.log('User accepted the install prompt');
                         showToast('App is being installed...');
@@ -1405,7 +3082,7 @@
                         console.log('User dismissed the install prompt');
                         showToast('Installation cancelled');
                     }
-                    
+
                     // Clear the deferredPrompt
                     deferredPrompt = null;
                     installBtn.classList.add('hidden');
@@ -1418,7 +3095,7 @@
                 showToast('App installed successfully!');
                 installBtn.classList.add('hidden');
                 isInstalled = true;
-                
+
                 // Track installation analytics if needed
                 if (typeof gtag !== 'undefined') {
                     gtag('event', 'pwa_install', {
@@ -1436,7 +3113,7 @@
                 installBtn.classList.add('hidden');
                 console.log('App is running in standalone mode');
             }
-            
+
             // Check for iOS standalone mode
             if (window.navigator.standalone === true) {
                 isInstalled = true;
@@ -1463,7 +3140,7 @@
             // Handle URL parameters for PWA shortcuts
             const urlParams = new URLSearchParams(window.location.search);
             const action = urlParams.get('action');
-            
+
             if (action === 'new') {
                 // Clear the grid for new document
                 grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
@@ -1477,157 +3154,646 @@
         // --- Event Listeners Setup ---
 
         function setupEventListeners() {
-            document.addEventListener('keydown', handleKeyDown);
-            document.addEventListener('keyup', handleKeyUp);
-            
-            document.addEventListener('mousedown', () => { isMouseDown = true; });
-            document.addEventListener('mouseup', () => { isMouseDown = false; });
+            try {
+                document.addEventListener('keydown', handleKeyDown);
+                document.addEventListener('keyup', handleKeyUp);
 
-            brailleGrid.addEventListener('mousedown', e => {
-                if (isEraseMode && e.target.classList.contains('braille-dot')) {
-                    const { row, col, dotIndex } = e.target.dataset;
-                    eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
-                }
-            });
-            brailleGrid.addEventListener('mouseover', e => {
-                if (isEraseMode && isMouseDown && e.target.classList.contains('braille-dot')) {
-                     const { row, col, dotIndex } = e.target.dataset;
-                    eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
-                }
-            });
+                document.addEventListener('mousedown', () => { isMouseDown = true; });
+                document.addEventListener('mouseup', () => { isMouseDown = false; });
 
-            // Touch events for eraser mode
-            brailleGrid.addEventListener('touchstart', e => {
-                if (isEraseMode) {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (element && element.classList.contains('braille-dot')) {
-                        const { row, col, dotIndex } = element.dataset;
-                        eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                brailleGrid.addEventListener('mousedown', e => {
+                    try {
+                        if (isEraseMode && e.target.classList.contains('braille-dot')) {
+                            const { row, col, dotIndex } = e.target.dataset;
+                            eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                        }
+                    } catch (error) {
+                        console.error('Mouse down error in braille grid:', error);
                     }
-                }
-            }, { passive: false });
-            brailleGrid.addEventListener('touchmove', e => {
-                if (isEraseMode) {
-                    e.preventDefault();
-                    const touch = e.touches[0];
-                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                    if (element && element.classList.contains('braille-dot')) {
-                        const { row, col, dotIndex } = element.dataset;
-                        eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                });
+                brailleGrid.addEventListener('mouseover', e => {
+                    try {
+                        if (isEraseMode && isMouseDown && e.target.classList.contains('braille-dot')) {
+                            const { row, col, dotIndex } = e.target.dataset;
+                            eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                        }
+                    } catch (error) {
+                        console.error('Mouse over error in braille grid:', error);
                     }
+                });
+
+                // Touch events for eraser mode
+                brailleGrid.addEventListener('touchstart', e => {
+                    try {
+                        if (isEraseMode) {
+                            e.preventDefault();
+                            const touch = e.touches[0];
+                            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (element && element.classList.contains('braille-dot')) {
+                                const { row, col, dotIndex } = element.dataset;
+                                eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Touch start error in braille grid:', error);
+                    }
+                }, { passive: false });
+                brailleGrid.addEventListener('touchmove', e => {
+                    try {
+                        if (isEraseMode) {
+                            e.preventDefault();
+                            const touch = e.touches[0];
+                            const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                            if (element && element.classList.contains('braille-dot')) {
+                                const { row, col, dotIndex } = element.dataset;
+                                eraseDot(parseInt(row), parseInt(col), parseInt(dotIndex));
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Touch move error in braille grid:', error);
+                    }
+                }, { passive: false });
+
+                allClearBtn.addEventListener('click', () => {
+                    try {
+                        grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
+                        cursor = { row: 0, col: 0 };
+                        lastCursor = { row: -1, col: -1 }; // Reset last cursor position
+                        renderBrailleGrid();
+                        showToast('Document cleared');
+                    } catch (error) {
+                        console.error('Failed to clear document:', error);
+                        showToast('Failed to clear document', true);
+                    }
+                });
+
+                eraseModeBtn.addEventListener('click', () => {
+                    try {
+                        isEraseMode = !isEraseMode;
+                        eraseModeBtn.classList.toggle('active', isEraseMode);
+                        eraseModeBtn.classList.toggle('erase-active', isEraseMode);
+                        brailleGrid.classList.toggle('erase-mode', isEraseMode);
+                        showToast(isEraseMode ? 'Erase mode enabled' : 'Erase mode disabled');
+                    } catch (error) {
+                        console.error('Failed to toggle erase mode:', error);
+                        showToast('Failed to toggle erase mode', true);
+                    }
+                });
+
+                fullscreenBtn.addEventListener('click', () => {
+                    try {
+                        const appElement = document.getElementById('braille-writer-app');
+                        if (!document.fullscreenElement) {
+                            appElement.requestFullscreen().catch(err => {
+                                console.error('Failed to enter fullscreen:', err);
+                                showToast('Fullscreen not supported on this device', true);
+                            });
+                        } else {
+                            document.exitFullscreen().catch(err => {
+                                console.error('Failed to exit fullscreen:', err);
+                            });
+                        }
+                    } catch (error) {
+                        console.error('Fullscreen error:', error);
+                        showToast('Fullscreen not supported on this device', true);
+                    }
+                });
+                document.addEventListener('fullscreenchange', () => {
+                    const appElement = document.getElementById('braille-writer-app');
+                    const isFullscreen = !!document.fullscreenElement;
+                    appElement.classList.toggle('fullscreen-mode', isFullscreen);
+
+                    // Toggle active class for visual state (depressed button)
+                    fullscreenBtn.classList.toggle('active', isFullscreen);
+
+                    // Control the glint animation based on fullscreen state
+                    if (isFullscreen) {
+                        fullscreenBtn.classList.add('in-fullscreen');
+                    } else {
+                        fullscreenBtn.classList.remove('in-fullscreen');
+                    }
+                    
+                    // Recalculate cell scaling after fullscreen change
+                    setTimeout(updateCellScaling, 100);
+                });
+
+                saveBtn.addEventListener('click', saveBraille);
+                loadBtn.addEventListener('click', loadBraille);
+
+                darkModeBtn.addEventListener('click', () => {
+                    try {
+                        const appElement = document.getElementById('braille-writer-app');
+                        appElement.classList.toggle('high-contrast-dark');
+                        const isDarkMode = appElement.classList.contains('high-contrast-dark');
+
+                        // Update the text span in the toolbar button
+                        const btnSpan = darkModeBtn.querySelector('span');
+                        if (btnSpan) {
+                            btnSpan.textContent = isDarkMode ? 'Light' : 'Dark';
+                        }
+
+                        darkModeBtn.classList.toggle('active', isDarkMode);
+                        savePreferences();
+                        showToast(isDarkMode ? 'High contrast dark mode enabled' : 'Light mode enabled');
+                    } catch (error) {
+                        console.error('Failed to toggle dark mode:', error);
+                        showToast('Failed to toggle dark mode', true);
+                    }
+                });
+
+                // Touch Keyboard toggle button
+                touchKeysBtn.addEventListener('click', () => {
+                    try {
+                        const appElement = document.getElementById('braille-writer-app');
+                        const keyContainer = document.querySelector('.key-container');
+                        const isHidden = keyContainer.classList.toggle('hidden');
+                        appElement.classList.toggle('keys-hidden', isHidden);
+                        touchKeysBtn.classList.toggle('active', !isHidden);
+                        
+                        // Update button text
+                        const btnSpan = touchKeysBtn.querySelector('span');
+                        if (btnSpan) {
+                            btnSpan.textContent = isHidden ? 'Keys' : 'Keys';
+                        }
+                        
+                        showToast(isHidden ? 'Touch keyboard hidden' : 'Touch keyboard shown');
+                    } catch (error) {
+                        console.error('Failed to toggle touch keyboard:', error);
+                    }
+                });
+
+                // Line Up/Down buttons for touch screen navigation
+                lineUpBtn.addEventListener('click', () => {
+                    try {
+                        handleAction('up');
+                    } catch (error) {
+                        console.error('Line up button error:', error);
+                    }
+                });
+                lineDownBtn.addEventListener('click', () => {
+                    try {
+                        handleAction('down');
+                    } catch (error) {
+                        console.error('Line down button error:', error);
+                    }
+                });
+
+                leftHandleUp.addEventListener('click', () => {
+                    try {
+                        handleAction('up');
+                    } catch (error) {
+                        console.error('Left handle up error:', error);
+                    }
+                });
+                leftHandleDown.addEventListener('click', () => {
+                    try {
+                        handleAction('down');
+                    } catch (error) {
+                        console.error('Left handle down error:', error);
+                    }
+                });
+                rightHandleUp.addEventListener('click', () => {
+                    try {
+                        handleAction('up');
+                    } catch (error) {
+                        console.error('Right handle up error:', error);
+                    }
+                });
+                rightHandleDown.addEventListener('click', () => {
+                    try {
+                        handleAction('down');
+                    } catch (error) {
+                        console.error('Right handle down error:', error);
+                    }
+                });
+
+                const keyButtonMap = {
+                    'dot1-btn': 'f', 'dot2-btn': 'd', 'dot3-btn': 's',
+                    'dot4-btn': 'j', 'dot5-btn': 'k', 'dot6-btn': 'l',
+                    'space-btn': 'g', 'linespace-btn': 'a', 'backspace-btn': ';'
+                };
+                Object.entries(keyButtonMap).forEach(([btnId, key]) => {
+                    const button = document.getElementById(btnId);
+                    if (button) {
+                        let isPressed = false; // Track if button is currently pressed
+                        let isTouching = false; // Track touch state to prevent double-firing
+                        
+                        const press = () => {
+                            if (isPressed) return; // Already pressed, ignore
+                            isPressed = true;
+                            try {
+                                document.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true }));
+                            } catch (error) {
+                                console.error(`Failed to press key ${key}:`, error);
+                            }
+                        };
+                        const release = () => {
+                            if (!isPressed) return; // Not pressed, ignore
+                            isPressed = false;
+                            try {
+                                document.dispatchEvent(new KeyboardEvent('keyup', { key: key, bubbles: true }));
+                            } catch (error) {
+                                console.error(`Failed to release key ${key}:`, error);
+                            }
+                        };
+                        button.addEventListener('mousedown', (e) => {
+                            if (isTouching) return; // Ignore if touch event already handled this
+                            e.preventDefault(); // Prevent focus issues
+                            press();
+                        });
+                        button.addEventListener('mouseup', (e) => {
+                            if (isTouching) return;
+                            release();
+                        });
+                        button.addEventListener('mouseleave', (e) => {
+                            if (isTouching) return;
+                            release();
+                        });
+                        button.addEventListener('touchstart', (e) => {
+                            try {
+                                e.preventDefault();
+                                isTouching = true;
+                                press();
+                            } catch (error) {
+                                console.error(`Touch start error for ${key}:`, error);
+                            }
+                        }, { passive: false });
+                        button.addEventListener('touchend', (e) => {
+                            try {
+                                e.preventDefault();
+                                release();
+                                // Reset touch flag after a short delay to allow mouse events to be ignored
+                                setTimeout(() => { isTouching = false; }, 300);
+                            } catch (error) {
+                                console.error(`Touch end error for ${key}:`, error);
+                            }
+                        }, { passive: false });
+                        button.addEventListener('touchcancel', (e) => {
+                            try {
+                                release();
+                                setTimeout(() => { isTouching = false; }, 300);
+                            } catch (error) {
+                                console.error(`Touch cancel error for ${key}:`, error);
+                            }
+                        });
+                    }
+                });
+
+                slider.addEventListener('input', e => {
+                    try {
+                        const newCol = parseInt(e.target.value);
+                        if (!isNaN(newCol) && newCol >= 0 && newCol < COLS) {
+                            cursor.col = newCol;
+                            updateCellCount();
+                            renderBrailleGrid();
+                            rotateSlider();
+                            checkBellWarning();
+                        }
+                    } catch (error) {
+                        console.error('Slider input error:', error);
+                    }
+                });
+                slider.addEventListener('change', () => { document.getElementById('braille-writer-app').focus(); });
+
+                document.getElementById('instructions-toggle').addEventListener('click', function () {
+                    try {
+                        this.parentElement.classList.toggle('open');
+                    } catch (error) {
+                        console.error('Failed to toggle instructions:', error);
+                    }
+                });
+
+                // Close button for instructions drawer
+                const instructionsCloseBtn = document.getElementById('instructions-close');
+                if (instructionsCloseBtn) {
+                    instructionsCloseBtn.addEventListener('click', () => {
+                        try {
+                            const instructionsDrawer = document.getElementById('instructions-drawer');
+                            const settingsBtn = document.getElementById('settings-btn');
+                            if (instructionsDrawer) {
+                                instructionsDrawer.classList.remove('open');
+                                if (settingsBtn) settingsBtn.classList.remove('active');
+                            }
+                        } catch (error) {
+                            console.error('Failed to close instructions:', error);
+                        }
+                    });
                 }
-            }, { passive: false });
 
-            allClearBtn.addEventListener('click', () => {
-                grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
-                cursor = { row: 0, col: 0 };
-                renderBrailleGrid();
-            });
-
-            eraseModeBtn.addEventListener('click', () => {
-                isEraseMode = !isEraseMode;
-                eraseModeBtn.classList.toggle('active', isEraseMode);
-                brailleGrid.classList.toggle('erase-mode', isEraseMode);
-            });
-
-            fullscreenBtn.addEventListener('click', () => {
-                const appElement = document.getElementById('braille-writer-app');
-                if (!document.fullscreenElement) appElement.requestFullscreen().catch(err => console.error(err));
-                else document.exitFullscreen();
-            });
-            document.addEventListener('fullscreenchange', () => {
-                const appElement = document.getElementById('braille-writer-app');
-                const isFullscreen = !!document.fullscreenElement;
-                appElement.classList.toggle('fullscreen-mode', isFullscreen);
-                fullscreenBtn.textContent = isFullscreen ? 'Exit Full Screen' : 'Full Screen';
-                
-                // Control the glint animation based on fullscreen state
-                if (isFullscreen) {
-                    fullscreenBtn.classList.add('in-fullscreen');
-                } else {
-                    fullscreenBtn.classList.remove('in-fullscreen');
+                // Settings button in side toolbar also toggles the instructions drawer
+                const settingsBtn = document.getElementById('settings-btn');
+                if (settingsBtn) {
+                    settingsBtn.addEventListener('click', () => {
+                        try {
+                            const instructionsDrawer = document.getElementById('instructions-drawer');
+                            if (instructionsDrawer) {
+                                instructionsDrawer.classList.toggle('open');
+                                settingsBtn.classList.toggle('active', instructionsDrawer.classList.contains('open'));
+                            }
+                        } catch (error) {
+                            console.error('Failed to toggle settings:', error);
+                        }
+                    });
                 }
-            });
-            
-            saveBtn.addEventListener('click', saveBraille);
-            loadBtn.addEventListener('click', loadBraille);
-
-            darkModeBtn.addEventListener('click', () => {
-                const appElement = document.getElementById('braille-writer-app');
-                appElement.classList.toggle('high-contrast-dark');
-                const isDarkMode = appElement.classList.contains('high-contrast-dark');
-                darkModeBtn.textContent = isDarkMode ? 'Light Mode' : 'Dark Mode';
-            });
-
-            leftHandleUp.addEventListener('click', () => handleAction('up'));
-            leftHandleDown.addEventListener('click', () => handleAction('down'));
-            rightHandleUp.addEventListener('click', () => handleAction('up'));
-            rightHandleDown.addEventListener('click', () => handleAction('down'));
-
-            const keyButtonMap = {
-                'dot1-btn': 'f', 'dot2-btn': 'd', 'dot3-btn': 's',
-                'dot4-btn': 'j', 'dot5-btn': 'k', 'dot6-btn': 'l',
-                'space-btn': 'g', 'linespace-btn': 'a', 'backspace-btn': ';'
-            };
-            Object.entries(keyButtonMap).forEach(([btnId, key]) => {
-                const button = document.getElementById(btnId);
-                if (button) {
-                    const press = () => document.dispatchEvent(new KeyboardEvent('keydown', { key: key, bubbles: true }));
-                    const release = () => document.dispatchEvent(new KeyboardEvent('keyup', { key: key, bubbles: true }));
-                    button.addEventListener('mousedown', press);
-                    button.addEventListener('mouseup', release);
-                    button.addEventListener('mouseleave', release);
-                    button.addEventListener('touchstart', (e) => { e.preventDefault(); press(); }, { passive: false });
-                    button.addEventListener('touchend', (e) => { e.preventDefault(); release(); }, { passive: false });
-                }
-            });
-
-            slider.addEventListener('input', e => {
-                cursor.col = parseInt(e.target.value);
-                updateCellCount();
-                renderBrailleGrid();
-                rotateSlider();
-                checkBellWarning();
-            });
-            slider.addEventListener('change', () => { document.getElementById('braille-writer-app').focus(); });
-
-            document.getElementById('instructions-toggle').addEventListener('click', function() { this.parentElement.classList.toggle('open'); });
-            bellWarningSelect.addEventListener('change', e => { bellWarningSpaces = parseInt(e.target.value); });
-            toggleBell.addEventListener('change', e => { isBellEnabled = e.target.checked; });
-            toggleKeySound.addEventListener('change', e => { isKeySoundEnabled = e.target.checked; });
-            volumeControl.addEventListener('input', updateVolume);
+                bellWarningSelect.addEventListener('change', e => {
+                    try {
+                        const value = parseInt(e.target.value);
+                        if (!isNaN(value) && value >= 3 && value <= 7) {
+                            bellWarningSpaces = value;
+                            savePreferences();
+                        }
+                    } catch (error) {
+                        console.error('Failed to update bell warning:', error);
+                    }
+                });
+                toggleBell.addEventListener('change', e => {
+                    try {
+                        isBellEnabled = e.target.checked;
+                        savePreferences();
+                    } catch (error) {
+                        console.error('Failed to toggle bell:', error);
+                    }
+                });
+                toggleKeySound.addEventListener('change', e => {
+                    try {
+                        isKeySoundEnabled = e.target.checked;
+                        savePreferences();
+                    } catch (error) {
+                        console.error('Failed to toggle key sound:', error);
+                    }
+                });
+                muteAllCheckbox.addEventListener('change', e => {
+                    try {
+                        isMuted = e.target.checked;
+                        savePreferences();
+                    } catch (error) {
+                        console.error('Failed to toggle mute:', error);
+                    }
+                });
+                volumeControl.addEventListener('input', () => {
+                    updateVolume();
+                    savePreferences();
+                });
+            } catch (error) {
+                console.error('Error setting up event listeners:', error);
+                showToast('Failed to set up event listeners', true);
+            }
         }
 
         // --- Initialization ---
         function initialize() {
-            generateBrailleUnicodeMaps();
-            initializeAudio();
-            renderBrailleGrid();
-            setupEventListeners();
-            updateVolume();
-            
-            // PWA Initialization
-            registerServiceWorker();
-            handleInstallPrompt();
-            checkIfInstalled();
-            enableOfflineSupport();
-            handleUrlParameters();
-            
-            document.getElementById('braille-writer-app').focus();
-            
-            // Show welcome message on first load
-            setTimeout(() => {
-                if (!localStorage.getItem('braille-writer-welcomed')) {
-                    showToast('Welcome to Braille Writer Simulator! This app works offline and can be installed.');
-                    localStorage.setItem('braille-writer-welcomed', 'true');
+            try {
+                // Reset cursor to top-left corner
+                cursor = { row: 0, col: 0 };
+                lastCursor = { row: -1, col: -1 };
+                
+                generateBrailleUnicodeMaps();
+                initializeAudio();
+                loadPreferences(); // Load saved user preferences
+                renderBrailleGrid();
+                setupEventListeners();
+                updateVolume();
+
+                // Initialize cell scaling and listen for resize
+                setTimeout(updateCellScaling, 50); // Delay to ensure grid is rendered
+                window.addEventListener('resize', handleResize);
+
+                // PWA Initialization
+                registerServiceWorker();
+                handleInstallPrompt();
+                checkIfInstalled();
+                enableOfflineSupport();
+                handleUrlParameters();
+
+                const appElement = document.getElementById('braille-writer-app');
+                if (appElement) {
+                    appElement.focus();
                 }
-            }, 2000);
+
+                // Show welcome message on first load
+                setTimeout(() => {
+                    try {
+                        if (!localStorage.getItem('braille-writer-welcomed')) {
+                            showToast('Welcome to Braille Writer Simulator! This app works offline and can be installed.');
+                            localStorage.setItem('braille-writer-welcomed', 'true');
+                        }
+                    } catch (error) {
+                        console.warn('Failed to show welcome message:', error);
+                    }
+                }, 2000);
+
+                console.log('Braille Writer Simulator initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                showToast('Failed to initialize app. Please refresh the page.', true);
+            }
         }
 
-        window.addEventListener('load', initialize);
+        // Global error handling
+        window.addEventListener('error', (event) => {
+            console.error('Global error:', event.error);
+            showToast('An unexpected error occurred', true);
+        });
+
+        window.addEventListener('unhandledrejection', (event) => {
+            console.error('Unhandled promise rejection:', event.reason);
+            showToast('An unexpected error occurred', true);
+        });
+
+        // Ensure the app always keeps focus for keyboard input
+        window.addEventListener('click', (e) => {
+            // Logic to refocus the app container if the user clicks "empty" space
+            const activeTag = document.activeElement ? document.activeElement.tagName : '';
+            const appElement = document.getElementById('braille-writer-app');
+
+            // If the user hasn't clicked a specific control (input/select/button), refocus the main app
+            if (appElement && activeTag !== 'INPUT' && activeTag !== 'SELECT' && activeTag !== 'TEXTAREA') {
+                appElement.focus();
+            }
+        });
+
+        // Aggressively claim focus on load and visibility change
+        window.addEventListener('load', () => {
+            initialize();
+            const appElement = document.getElementById('braille-writer-app');
+            if (appElement) {
+                appElement.focus();
+                // Try again after a short delay to ensure rendering is complete
+                setTimeout(() => appElement.focus(), 100);
+            }
+        });
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') {
+                const appElement = document.getElementById('braille-writer-app');
+                if (appElement) appElement.focus();
+            }
+        });
+
+        // --- Splash Screen ---
+        (function initSplashScreen() {
+            const splashOverlay = document.getElementById('splash-overlay');
+            const splashStart = document.getElementById('splash-start');
+            const splashHowToUse = document.getElementById('splash-how-to-use');
+            const splashDontShow = document.getElementById('splash-dont-show');
+            const splashCloseBtn = document.getElementById('splash-close-btn');
+            const instructionsDrawer = document.querySelector('.instructions-drawer');
+            const instructionsToggle = document.getElementById('instructions-toggle');
+            
+            if (!splashOverlay) return;
+
+            // Check if user has opted to not show splash
+            const hideSplash = localStorage.getItem('brailleWriter_hideSplash');
+            if (hideSplash === 'true') {
+                splashOverlay.classList.add('hidden');
+                setTimeout(() => splashOverlay.remove(), 500);
+                return;
+            }
+
+            function closeSplash() {
+                // Save preference if checkbox is checked
+                if (splashDontShow && splashDontShow.checked) {
+                    localStorage.setItem('brailleWriter_hideSplash', 'true');
+                }
+                
+                splashOverlay.classList.add('hidden');
+                setTimeout(() => splashOverlay.remove(), 500);
+                
+                // Focus the app
+                const appElement = document.getElementById('braille-writer-app');
+                if (appElement) appElement.focus();
+            }
+
+            function openHowToUse() {
+                closeSplash();
+                
+                // Open the instructions drawer after a short delay
+                setTimeout(() => {
+                    if (instructionsDrawer && !instructionsDrawer.classList.contains('open')) {
+                        instructionsDrawer.classList.add('open');
+                        if (instructionsToggle) {
+                            instructionsToggle.setAttribute('aria-expanded', 'true');
+                        }
+                        // Also update settings button state
+                        const settingsBtn = document.getElementById('settings-btn');
+                        if (settingsBtn) settingsBtn.classList.add('active');
+                    }
+                }, 300);
+            }
+
+            // Event listeners
+            if (splashStart) {
+                splashStart.addEventListener('click', closeSplash);
+            }
+
+            if (splashCloseBtn) {
+                splashCloseBtn.addEventListener('click', closeSplash);
+            }
+
+            if (splashHowToUse) {
+                splashHowToUse.addEventListener('click', openHowToUse);
+            }
+
+            // Close on overlay click (outside modal)
+            splashOverlay.addEventListener('click', (e) => {
+                if (e.target === splashOverlay) {
+                    closeSplash();
+                }
+            });
+
+            // Close on Escape key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && !splashOverlay.classList.contains('hidden')) {
+                    closeSplash();
+                }
+            });
+        })();
+
+        // --- Simple Resizer Bar ---
+        (function initResizer() {
+            const resizerBar = document.getElementById('resizer-bar');
+            const brailleGrid = document.querySelector('.braille-grid');
+            const mainContent = document.querySelector('.main-content');
+            
+            if (!resizerBar || !brailleGrid || !mainContent) return;
+
+            let isDragging = false;
+            let startY = 0;
+            let startHeight = 0;
+
+            function onMouseDown(e) {
+                isDragging = true;
+                startY = e.clientY || (e.touches && e.touches[0].clientY);
+                startHeight = brailleGrid.offsetHeight;
+                
+                resizerBar.classList.add('dragging');
+                document.body.style.cursor = 'ns-resize';
+                document.body.style.userSelect = 'none';
+                
+                e.preventDefault();
+            }
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                
+                const currentY = e.clientY || (e.touches && e.touches[0].clientY);
+                const deltaY = currentY - startY;
+                const containerHeight = mainContent.clientHeight;
+                const minGridHeight = 80;
+                const maxGridHeight = containerHeight - 200; // Leave space for keys
+                
+                const newHeight = Math.max(minGridHeight, Math.min(maxGridHeight, startHeight + deltaY));
+                
+                brailleGrid.style.height = newHeight + 'px';
+                updateCellScaling(); // Recalculate cell sizes
+                e.preventDefault();
+            }
+
+            function onMouseUp() {
+                if (!isDragging) return;
+                isDragging = false;
+                
+                resizerBar.classList.remove('dragging');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                updateCellScaling(); // Final scaling update
+            }
+
+            resizerBar.addEventListener('mousedown', onMouseDown);
+            resizerBar.addEventListener('touchstart', onMouseDown, { passive: false });
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('touchmove', onMouseMove, { passive: false });
+            
+            document.addEventListener('mouseup', onMouseUp);
+            document.addEventListener('touchend', onMouseUp);
+
+            // Double-click to reset
+            resizerBar.addEventListener('dblclick', () => {
+                brailleGrid.style.height = '';
+                showToast('Reset to default size');
+                setTimeout(updateCellScaling, 50); // Recalculate after reset
+            });
+
+            // Click to show touch keys if they're hidden
+            resizerBar.addEventListener('click', (e) => {
+                const appElement = document.getElementById('braille-writer-app');
+                const keyContainer = document.querySelector('.key-container');
+                const touchKeysBtn = document.getElementById('touch-keys-btn');
+                
+                // Only toggle if keys are currently hidden and it wasn't a drag
+                if (appElement.classList.contains('keys-hidden') && !isDragging) {
+                    keyContainer.classList.remove('hidden');
+                    appElement.classList.remove('keys-hidden');
+                    if (touchKeysBtn) {
+                        touchKeysBtn.classList.add('active');
+                    }
+                    showToast('Touch keyboard shown');
+                }
+            });
+        })();
 
     </script>
 </body>
+
 </html>

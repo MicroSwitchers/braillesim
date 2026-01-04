@@ -1,9 +1,20 @@
-const CACHE_NAME = 'braille-writer-v1.0.0';
-const urlsToCache = [
+const CACHE_NAME = 'braille-writer-v1.0.2';
+
+// Core resources that must be cached
+const coreResources = [
   './',
   './index.html',
   './manifest.json',
   './braillesim.svg',
+  './sounds/key.wav',
+  './sounds/ding.wav',
+  './sounds/linespace.wav',
+  './sounds/space.wav',
+  './sounds/updown.wav'
+];
+
+// Optional resources (icons) - cache if available
+const optionalResources = [
   './icons/icon-72x72.png',
   './icons/icon-96x96.png',
   './icons/icon-128x128.png',
@@ -11,22 +22,33 @@ const urlsToCache = [
   './icons/icon-152x152.png',
   './icons/icon-192x192.png',
   './icons/icon-384x384.png',
-  './icons/icon-512x512.png',
-  'https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.77/Tone.js'
+  './icons/icon-512x512.png'
 ];
 
 // Install event - cache resources
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => {
+      .then(async (cache) => {
         console.log('Opened cache');
-        return cache.addAll(urlsToCache);
+        // Cache core resources (required)
+        await cache.addAll(coreResources);
+        
+        // Try to cache optional resources (icons), but don't fail if they're missing
+        for (const url of optionalResources) {
+          try {
+            await cache.add(url);
+          } catch (error) {
+            console.warn(`Optional resource not cached: ${url}`);
+          }
+        }
       })
       .catch((error) => {
         console.error('Failed to cache resources:', error);
       })
   );
+  // Take control immediately
+  self.skipWaiting();
 });
 
 // Fetch event - serve from cache with network fallback
@@ -80,6 +102,9 @@ self.addEventListener('activate', (event) => {
           }
         })
       );
+    }).then(() => {
+      // Take control of all pages immediately
+      return clients.claim();
     })
   );
 });

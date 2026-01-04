@@ -13,6 +13,12 @@
   "dir": "ltr",
   "icons": [
     {
+      "src": "braillesim.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
       "src": "icons/icon-72x72.png",
       "sizes": "72x72",
       "type": "image/png",
@@ -58,12 +64,6 @@
       "src": "icons/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "braillesim.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
       "purpose": "any maskable"
     }
   ],
