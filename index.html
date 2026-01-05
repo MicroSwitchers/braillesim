@@ -362,6 +362,9 @@
             margin: 16px;
             box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s ease, border-color 0.3s ease;
+            /* GPU acceleration for smooth scrolling */
+            -webkit-overflow-scrolling: touch;
+            contain: layout style;
             /* CSS Custom Properties for scaling */
             --cell-scale: 1;
             --cell-width: 20px;
@@ -423,7 +426,7 @@
             width: var(--dot-size, 7px);
             height: var(--dot-size, 7px);
             border-radius: 50%;
-            transition: all 0.1s ease-in-out;
+            /* No transition for instant response */
         }
 
         .braille-dot-active {
@@ -1914,8 +1917,8 @@
                         <span>Audio feedback with authentic sounds</span>
                     </div>
                     <div class="splash-feature">
-                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                        <span>Visual braille cell display</span>
+                        <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                        <span>Touch-friendly interface</span>
                     </div>
                     <div class="splash-feature">
                         <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
@@ -2334,6 +2337,10 @@
             space: null,      // Space bar
             updown: null      // Feed knob up/down
         };
+        // Audio pool for performance on tablets (avoids cloneNode overhead)
+        const audioPool = {};
+        const POOL_SIZE = 4;
+        const poolIndex = {};
         let audioVolume = 0.2; // Default 20%
 
         function initializeAudio() {
@@ -2345,11 +2352,15 @@
                 sounds.space = new Audio('./sounds/space.wav');
                 sounds.updown = new Audio('./sounds/updown.wav');
                 
-                // Preload and set initial volume for all sounds
-                Object.values(sounds).forEach(audio => {
-                    if (audio) {
+                // Create audio pool for each sound type (better performance on tablets)
+                Object.keys(sounds).forEach(type => {
+                    audioPool[type] = [];
+                    poolIndex[type] = 0;
+                    for (let i = 0; i < POOL_SIZE; i++) {
+                        const audio = new Audio(`./sounds/${type}.wav`);
                         audio.preload = 'auto';
                         audio.volume = audioVolume;
+                        audioPool[type].push(audio);
                     }
                 });
             } catch (error) {
@@ -2366,12 +2377,16 @@
                 if (soundType === 'ding' && !isBellEnabled) return;
                 if (soundType !== 'ding' && !isKeySoundEnabled) return;
                 
-                const audio = sounds[soundType];
-                if (audio) {
-                    // Clone and play to allow overlapping sounds
-                    const audioClone = audio.cloneNode();
-                    audioClone.volume = audioVolume;
-                    audioClone.play().catch(err => {
+                const pool = audioPool[soundType];
+                if (pool && pool.length > 0) {
+                    // Round-robin through the audio pool
+                    const audio = pool[poolIndex[soundType]];
+                    poolIndex[soundType] = (poolIndex[soundType] + 1) % POOL_SIZE;
+                    
+                    // Reset and play
+                    audio.currentTime = 0;
+                    audio.volume = audioVolume;
+                    audio.play().catch(err => {
                         // Ignore autoplay errors - user interaction required
                         console.debug('Audio play blocked:', err.message);
                     });
@@ -2385,9 +2400,11 @@
             try {
                 const volumeValue = parseInt(volumeControl.value, 10);
                 audioVolume = volumeValue / 100;
-                // Update volume on all preloaded sounds
-                Object.values(sounds).forEach(audio => {
-                    if (audio) audio.volume = audioVolume;
+                // Update volume on all audio pool elements
+                Object.values(audioPool).forEach(pool => {
+                    pool.forEach(audio => {
+                        if (audio) audio.volume = audioVolume;
+                    });
                 });
             } catch (error) {
                 console.warn('Failed to update volume:', error);
@@ -2791,69 +2808,46 @@
         }
 
         function updateRender() {
-            // Clear ALL current-cell classes to prevent ghost cursors
-            const existingCursors = brailleGrid.querySelectorAll('.current-cell');
-            existingCursors.forEach(el => el.classList.remove('current-cell'));
+            // Only clear previous cursor position (not all cursors)
+            if (lastCursor.row >= 0 && lastCursor.col >= 0 && 
+                cellElements[lastCursor.row]?.[lastCursor.col]) {
+                cellElements[lastCursor.row][lastCursor.col].cellEl.classList.remove('current-cell');
+            }
 
-            // Batch DOM updates for better performance
-            const updates = [];
-            let hasChanges = false;
-
+            // Direct DOM updates - no intermediate array
+            const dotOrder = [0, 3, 1, 4, 2, 5];
+            
             for (let i = 0; i < ROWS; i++) {
+                const rowCells = cellElements[i];
+                if (!rowCells) continue;
+                
                 for (let j = 0; j < COLS; j++) {
+                    const cellDOM = rowCells[j];
+                    if (!cellDOM?.dots) continue;
+                    
                     const cellData = grid[i][j];
-                    const cellDOM = cellElements[i][j];
+                    const dots = cellDOM.dots;
 
-                    // Safety check
-                    if (!cellDOM || !cellDOM.dots) {
-                        console.warn(`Missing cell DOM at position ${i},${j}`);
-                        continue;
-                    }
-
-                    const dotOrder = [0, 3, 1, 4, 2, 5];
                     for (let k = 0; k < 6; k++) {
-                        const dotIndex = dotOrder[k];
-                        const dotEl = cellDOM.dots[k];
+                        const dotEl = dots[k];
+                        if (!dotEl) continue;
+                        
+                        const shouldBeActive = cellData[dotOrder[k]] === 1;
+                        const isActive = dotEl.classList.contains('braille-dot-active');
 
-                        // Safety check
-                        if (!dotEl) {
-                            console.warn(`Missing dot element at position ${i},${j},${k}`);
-                            continue;
-                        }
-
-                        const shouldBeActive = cellData[dotIndex] === 1;
-                        const isCurrentlyActive = dotEl.classList.contains('braille-dot-active');
-
-                        if (shouldBeActive && !isCurrentlyActive) {
-                            updates.push(() => {
-                                dotEl.classList.remove('braille-dot-inactive');
-                                dotEl.classList.add('braille-dot-active');
-                            });
-                            hasChanges = true;
-                        } else if (!shouldBeActive && isCurrentlyActive) {
-                            updates.push(() => {
-                                dotEl.classList.remove('braille-dot-active');
-                                dotEl.classList.add('braille-dot-inactive');
-                            });
-                            hasChanges = true;
+                        if (shouldBeActive !== isActive) {
+                            if (shouldBeActive) {
+                                dotEl.className = 'braille-dot braille-dot-active';
+                            } else {
+                                dotEl.className = 'braille-dot braille-dot-inactive';
+                            }
                         }
                     }
                 }
             }
 
-            // Apply all updates in a single batch if there are changes
-            if (hasChanges) {
-                updates.forEach(update => {
-                    try {
-                        update();
-                    } catch (error) {
-                        console.error('Error updating dot element:', error);
-                    }
-                });
-            }
-
             // Update cursor position
-            if (cellElements[cursor.row] && cellElements[cursor.row][cursor.col]) {
+            if (cellElements[cursor.row]?.[cursor.col]) {
                 cellElements[cursor.row][cursor.col].cellEl.classList.add('current-cell');
             }
 
@@ -2865,12 +2859,12 @@
 
         function scrollToCursor() {
             try {
-                const currentCell = brailleGrid.querySelector('.current-cell');
-                if (currentCell && currentCell.scrollIntoView) {
-                    currentCell.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+                const currentCell = cellElements[cursor.row]?.[cursor.col]?.cellEl;
+                if (currentCell) {
+                    currentCell.scrollIntoView({ behavior: 'auto', block: 'nearest', inline: 'nearest' });
                 }
             } catch (error) {
-                console.error('Error scrolling to cursor:', error);
+                // Silently fail - not critical
             }
         }
 
