@@ -94,9 +94,24 @@
             height: 100dvh; /* Dynamic viewport height for mobile browsers */
             width: 100%;
             margin: 0;
-            background-color: #005f6b;
-            /* Classic Braille Writer Blue/Green */
-            background-image: linear-gradient(145deg, #007c8a, #004d56);
+            /* Color theme CSS custom properties */
+            --brailler-primary: #005f6b;
+            --brailler-gradient-start: #007c8a;
+            --brailler-gradient-end: #004d56;
+            --sidebar-gradient-start: #003e46;
+            --sidebar-gradient-end: #002a30;
+            --sidebar-border: #004d56;
+            --accent-color: #4fd1c5;
+            --accent-color-dim: rgba(79, 209, 197, 0.7);
+            --accent-glow: rgba(79, 209, 197, 0.4);
+            --drawer-bg: #004d56;
+            --drawer-border: #003e46;
+            --paper-bg: #f0e6d6;
+            --dot-active: #4a4a4a;
+            --dot-inactive: #e6dac8;
+            --dot-inactive-opacity: 1;
+            background-color: var(--brailler-primary);
+            background-image: linear-gradient(145deg, var(--brailler-gradient-start), var(--brailler-gradient-end));
             border: none;
             box-shadow: none;
             border-radius: 0;
@@ -105,6 +120,56 @@
             touch-action: manipulation;
             transition: background-color 0.3s ease, border-color 0.3s ease;
             position: relative;
+        }
+
+        /* Brailler color themes */
+        #braille-writer-app.brailler-blue {
+            --brailler-primary: #1e3a5f;
+            --brailler-gradient-start: #2c5282;
+            --brailler-gradient-end: #1a365d;
+            --sidebar-gradient-start: #1a365d;
+            --sidebar-gradient-end: #0f1f38;
+            --sidebar-border: #2c5282;
+            --accent-color: #63b3ed;
+            --accent-color-dim: rgba(99, 179, 237, 0.7);
+            --accent-glow: rgba(99, 179, 237, 0.4);
+            --drawer-bg: #1a365d;
+            --drawer-border: #0f1f38;
+        }
+
+        #braille-writer-app.brailler-grey {
+            --brailler-primary: #4a5568;
+            --brailler-gradient-start: #718096;
+            --brailler-gradient-end: #2d3748;
+            --sidebar-gradient-start: #2d3748;
+            --sidebar-gradient-end: #1a202c;
+            --sidebar-border: #4a5568;
+            --accent-color: #a0aec0;
+            --accent-color-dim: rgba(160, 174, 192, 0.7);
+            --accent-glow: rgba(160, 174, 192, 0.4);
+            --drawer-bg: #2d3748;
+            --drawer-border: #1a202c;
+        }
+
+        /* Paper color themes */
+        #braille-writer-app.paper-white {
+            --paper-bg: #ffffff;
+            --dot-inactive: #e2e8f0;
+        }
+
+        #braille-writer-app.paper-dark-buff {
+            --paper-bg: #d4c4a8;
+            --dot-inactive: #c4b498;
+        }
+
+        #braille-writer-app.paper-light-grey {
+            --paper-bg: #d8d8d8;
+            --dot-inactive: #c0c0c0;
+        }
+
+        /* Dot color themes */
+        #braille-writer-app.dots-black {
+            --dot-active: #000000;
         }
 
         #braille-writer-app:focus {
@@ -119,8 +184,8 @@
         .side-toolbar {
             width: 60px;
             min-width: 60px;
-            background: linear-gradient(180deg, #003e46, #002a30);
-            border-right: 2px solid #004d56;
+            background: linear-gradient(180deg, var(--sidebar-gradient-start, #003e46), var(--sidebar-gradient-end, #002a30));
+            border-right: 2px solid var(--sidebar-border, #004d56);
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -132,7 +197,7 @@
             z-index: 100;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
             scrollbar-width: thin;
-            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+            scrollbar-color: var(--accent-color-dim, rgba(79, 209, 197, 0.5)) rgba(0, 0, 0, 0.2);
         }
 
         /* Webkit scrollbar styling for side toolbar */
@@ -146,14 +211,14 @@
         }
 
         .side-toolbar::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            background: var(--accent-color-dim, rgba(79, 209, 197, 0.6));
             border-radius: 8px;
             border: 2px solid transparent;
             background-clip: padding-box;
         }
 
         .side-toolbar::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background: var(--accent-color, rgba(79, 209, 197, 0.8));
             background-clip: padding-box;
         }
 
@@ -239,8 +304,8 @@
             width: 44px;
             min-height: 85px;
             border-radius: 10px;
-            border: 1px solid rgba(79, 209, 197, 0.4);
-            background: linear-gradient(135deg, rgba(79, 209, 197, 0.2), rgba(56, 178, 172, 0.1));
+            border: 1px solid var(--accent-glow, rgba(79, 209, 197, 0.4));
+            background: linear-gradient(135deg, var(--accent-glow, rgba(79, 209, 197, 0.2)), rgba(56, 178, 172, 0.1));
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -266,7 +331,7 @@
         }
 
         .nav-half:hover {
-            background: rgba(79, 209, 197, 0.3);
+            background: var(--accent-glow, rgba(79, 209, 197, 0.3));
         }
 
         .nav-half:active {
@@ -289,7 +354,7 @@
             font-size: 8px;
             font-weight: 600;
             text-transform: uppercase;
-            color: rgba(79, 209, 197, 0.9);
+            color: var(--accent-color, rgba(79, 209, 197, 0.9));
             letter-spacing: 0.5px;
             padding: 5px 0 6px 0;
             text-align: center;
@@ -313,6 +378,88 @@
             min-width: 0;
             height: 100%;
             overflow: hidden;
+        }
+
+        /* Status Header Bar */
+        .status-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.2));
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            gap: 12px;
+        }
+
+        .status-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--accent-color, #4fd1c5);
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-title svg {
+            width: 20px;
+            height: 20px;
+            stroke: var(--accent-color, #4fd1c5);
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .status-indicators {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 4px 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .status-indicator.highlight {
+            background: var(--accent-glow, rgba(79, 209, 197, 0.2));
+            border-color: var(--accent-glow, rgba(79, 209, 197, 0.4));
+            color: var(--accent-color, #4fd1c5);
+        }
+
+        .status-indicator svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        .mode-badge {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background: var(--accent-glow, rgba(79, 209, 197, 0.3));
+            color: var(--accent-color, #4fd1c5);
+            letter-spacing: 0.5px;
+        }
+
+        .mode-badge.erase {
+            background: rgba(255, 94, 94, 0.3);
+            color: #ff8a80;
+        }
+
+        .mode-badge.hidden {
+            display: none;
         }
 
         /* Hidden original header - keeping for compatibility */
@@ -353,7 +500,7 @@
             height: 45%;
             min-height: 80px;
             overflow: auto;
-            background-color: #f0e6d6;
+            background-color: var(--paper-bg, #f0e6d6);
             border: 4px solid #c9c9c9;
             border-top-color: #aaa;
             border-left-color: #aaa;
@@ -395,7 +542,7 @@
             top: -10px;
             left: 50%;
             transform: translateX(-50%);
-            background: #f0e6d6;
+            background: var(--paper-bg, #f0e6d6);
             padding: 0 10px;
             font-size: 10px;
             color: rgba(0, 77, 86, 0.6);
@@ -430,18 +577,19 @@
         }
 
         .braille-dot-active {
-            background: #4a4a4a;
+            background: var(--dot-active, #4a4a4a);
             box-shadow: 0 1px 1px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.2);
             border: 1px solid #222;
         }
 
         .braille-dot-inactive {
-            background: #e6dac8;
+            background: var(--dot-inactive, #e6dac8);
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+            opacity: var(--dot-inactive-opacity, 1);
         }
 
         .current-cell {
-            background: rgba(0, 95, 107, 0.1);
+            background: var(--accent-glow, rgba(0, 95, 107, 0.1));
             border-radius: 4px;
         }
 
@@ -452,8 +600,8 @@
             right: 0;
             bottom: -3px;
             height: 3px;
-            background: #007c8a;
-            box-shadow: 0 0 6px #007c8a;
+            background: var(--brailler-gradient-start, #007c8a);
+            box-shadow: 0 0 6px var(--brailler-gradient-start, #007c8a);
             border-radius: 2px;
             animation: cursorPulse 2s infinite ease-in-out;
             transition: background-color 0.3s ease;
@@ -487,13 +635,26 @@
 
         /* Slider */
         .slider-container {
-            margin: 0 16px 12px;
-            padding: 6px 20px 6px 16px;
-            border-radius: 6px;
-            background: rgba(0, 0, 0, 0.1);
+            margin: 0 16px 8px;
+            padding: 10px 20px 8px 16px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.25));
             flex-shrink: 0;
             position: relative;
             transition: background-color 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .slider-label {
+            font-size: 10px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .slider {
@@ -501,7 +662,7 @@
             -webkit-appearance: none;
             appearance: none;
             height: 8px;
-            background: #004d56;
+            background: var(--brailler-gradient-end, #004d56);
             outline: none;
             border-radius: 4px;
             margin: 10px 0;
@@ -542,6 +703,16 @@
             background: rgba(0, 0, 0, 0.2);
             padding: 2px 8px;
             border-radius: 4px;
+        }
+
+        .cell-count-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-weight: 500;
+        }
+
+        .cell-count-value {
+            color: #4fd1c5;
+            font-weight: 700;
         }
 
         .key-container {
@@ -626,7 +797,7 @@
                 0 3px 5px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.05),
                 inset 0 2px 4px rgba(0, 0, 0, 0.3),
-                0 0 15px rgba(0, 124, 138, 0.4);
+                0 0 15px var(--accent-glow, rgba(0, 124, 138, 0.4));
             border-color: #2a3a3a;
         }
 
@@ -636,11 +807,66 @@
             min-height: 80px;
             border-radius: 15px 15px 35px 35px;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             justify-content: center;
             align-items: center;
             font-size: clamp(11px, 1.8vw, 18px);
             letter-spacing: 0.5px;
+            position: relative;
+            gap: 6px;
+        }
+
+        /* Dot position indicator - left hand keys use ::before (dot on left) */
+        .key.dot-key[data-dot="1"]::before,
+        .key.dot-key[data-dot="2"]::before,
+        .key.dot-key[data-dot="3"]::before {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-color-dim, rgba(79, 209, 197, 0.7));
+            box-shadow: 0 0 6px var(--accent-glow, rgba(79, 209, 197, 0.4));
+            flex-shrink: 0;
+            order: -1; /* Place before text */
+        }
+
+        /* Dot position indicator - right hand keys use ::after (dot on right) */
+        .key.dot-key[data-dot="4"]::after,
+        .key.dot-key[data-dot="5"]::after,
+        .key.dot-key[data-dot="6"]::after {
+            content: '';
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-color-dim, rgba(79, 209, 197, 0.7));
+            box-shadow: 0 0 6px var(--accent-glow, rgba(79, 209, 197, 0.4));
+            flex-shrink: 0;
+        }
+
+        /* Vertical positions for left hand (1,2,3) */
+        .key.dot-key[data-dot="1"]::before { align-self: flex-start; margin-top: 12px; }
+        .key.dot-key[data-dot="2"]::before { align-self: center; }
+        .key.dot-key[data-dot="3"]::before { align-self: flex-end; margin-bottom: 15px; }
+
+        /* Vertical positions for right hand (4,5,6) */
+        .key.dot-key[data-dot="4"]::after { align-self: flex-start; margin-top: 12px; }
+        .key.dot-key[data-dot="5"]::after { align-self: center; }
+        .key.dot-key[data-dot="6"]::after { align-self: flex-end; margin-bottom: 15px; }
+
+        /* Pressed state for left hand keys */
+        .key.dot-key[data-dot="1"].pressed::before,
+        .key.dot-key[data-dot="2"].pressed::before,
+        .key.dot-key[data-dot="3"].pressed::before {
+            background: var(--accent-color, #4fd1c5);
+            box-shadow: 0 0 12px var(--accent-color-dim, rgba(79, 209, 197, 0.8));
+        }
+
+        /* Pressed state for right hand keys */
+        .key.dot-key[data-dot="4"].pressed::after,
+        .key.dot-key[data-dot="5"].pressed::after,
+        .key.dot-key[data-dot="6"].pressed::after {
+            background: var(--accent-color, #4fd1c5);
+            box-shadow: 0 0 12px var(--accent-color-dim, rgba(79, 209, 197, 0.8));
         }
 
         .space-key {
@@ -667,11 +893,48 @@
             height: 75%;
             border-radius: 9999px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             font-size: clamp(8px, 1.2vw, 14px);
             letter-spacing: 0.3px;
             padding: 0.5em;
+            gap: 2px;
+        }
+
+        /* Key label structure */
+        .key-main {
+            font-size: clamp(14px, 2.5vw, 24px);
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .key-hint {
+            font-size: clamp(11px, 1.5vw, 15px);
+            opacity: 0.7;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .dot-key .key-main {
+            font-size: clamp(18px, 3vw, 32px);
+        }
+
+        .space-key .key-main {
+            font-size: clamp(12px, 1.8vw, 18px);
+        }
+
+        .space-key .key-hint {
+            font-size: clamp(10px, 1.3vw, 13px);
+        }
+
+        .round-key .key-main {
+            font-size: clamp(14px, 2vw, 20px);
+        }
+
+        .round-key .key-hint {
+            font-size: clamp(10px, 1.3vw, 13px);
         }
 
         /* Resizer Bar - Drag handle between braille grid and keys */
@@ -701,6 +964,51 @@
         .resizer-bar:active,
         .resizer-bar.dragging {
             background: linear-gradient(180deg, rgba(0, 124, 138, 0.6), rgba(0, 124, 138, 0.7));
+        }
+
+        /* Blue theme resizer bar */
+        #braille-writer-app.brailler-blue .resizer-bar:hover {
+            background: linear-gradient(180deg, rgba(44, 82, 130, 0.4), rgba(44, 82, 130, 0.5));
+        }
+
+        #braille-writer-app.brailler-blue .resizer-bar:active,
+        #braille-writer-app.brailler-blue .resizer-bar.dragging {
+            background: linear-gradient(180deg, rgba(44, 82, 130, 0.6), rgba(44, 82, 130, 0.7));
+        }
+
+        /* Grey theme resizer bar */
+        #braille-writer-app.brailler-grey .resizer-bar:hover {
+            background: linear-gradient(180deg, rgba(85, 85, 85, 0.4), rgba(85, 85, 85, 0.5));
+        }
+
+        #braille-writer-app.brailler-grey .resizer-bar:active,
+        #braille-writer-app.brailler-grey .resizer-bar.dragging {
+            background: linear-gradient(180deg, rgba(85, 85, 85, 0.6), rgba(85, 85, 85, 0.7));
+        }
+
+        /* Dark mode resizer bar */
+        #braille-writer-app.high-contrast-dark .resizer-bar:hover {
+            background: var(--dark-bg-light, rgba(60, 60, 60, 0.8));
+        }
+
+        #braille-writer-app.high-contrast-dark .resizer-bar:active,
+        #braille-writer-app.high-contrast-dark .resizer-bar.dragging {
+            background: var(--dark-bg-element, rgba(80, 80, 80, 0.9));
+        }
+
+        #braille-writer-app.high-contrast-dark .resizer-handle-line {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 0.4;
+        }
+
+        #braille-writer-app.high-contrast-dark .resizer-bar:hover .resizer-handle-line {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 0.7;
+        }
+
+        #braille-writer-app.high-contrast-dark .resizer-bar.dragging .resizer-handle-line {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 0.9;
         }
 
         /* Visual handle on resizer bar */
@@ -740,7 +1048,7 @@
 
         /* Instructions & Settings */
         .instructions-drawer {
-            background: #004d56;
+            background: var(--drawer-bg, #004d56);
             border-top: 1px solid rgba(255, 255, 255, 0.1);
             flex-shrink: 0;
             transition: background-color 0.3s ease, border-color 0.3s ease;
@@ -795,7 +1103,7 @@
             padding: 12px;
             background: rgba(0, 0, 0, 0.2);
             border: none;
-            border-bottom: 1px solid #003e46;
+            border-bottom: 1px solid var(--drawer-border, #003e46);
             color: #fff;
             font-size: 16px;
             font-weight: 700;
@@ -827,7 +1135,7 @@
             overflow-y: auto;
             max-height: 100%;
             scrollbar-width: thin;
-            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+            scrollbar-color: var(--accent-color-dim, rgba(79, 209, 197, 0.5)) rgba(0, 0, 0, 0.2);
         }
 
         /* Webkit scrollbar styling for instructions drawer */
@@ -841,14 +1149,14 @@
         }
 
         .instructions-content::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            background: var(--accent-color-dim, rgba(79, 209, 197, 0.6));
             border-radius: 10px;
             border: 2px solid transparent;
             background-clip: padding-box;
         }
 
         .instructions-content::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background: var(--accent-color, rgba(79, 209, 197, 0.8));
             background-clip: padding-box;
         }
 
@@ -874,15 +1182,157 @@
             border-radius: 10px;
             padding: 18px;
             margin-top: 15px;
-            border: 1px solid #003e46;
+            border: 1px solid var(--drawer-border, #003e46);
             transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Color options styling */
+        .color-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .color-option {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            min-height: 48px;
+            min-width: 120px;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 150ms ease;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option:hover {
+            background: rgba(0, 0, 0, 0.35);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-option:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-option:has(input:checked) {
+            border-color: var(--accent-color, #4fd1c5);
+            background: var(--accent-glow, rgba(79, 209, 197, 0.15));
+            box-shadow: 0 2px 8px rgba(79, 209, 197, 0.3);
+        }
+
+        .color-option input[type="radio"] {
+            display: none;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+
+        .color-option span:last-child {
+            font-size: 14px;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .slider-setting {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+        }
+
+        .slider-setting label {
+            font-size: 13px;
+            color: #e0e0e0;
+            min-width: 60px;
+        }
+
+        .slider-setting input[type="range"] {
+            flex: 1;
+            min-width: 100px;
+        }
+
+        .slider-setting span {
+            font-size: 13px;
+            color: #4fd1c5;
+            min-width: 45px;
+            text-align: right;
+        }
+
+        /* Dark mode for color options */
+        #braille-writer-app.high-contrast-dark .color-option {
+            background: var(--dark-bg-element, rgba(255, 255, 255, 0.05));
+            border-color: var(--dark-bg-light, #444);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option:hover {
+            background: var(--dark-bg-light, rgba(255, 255, 255, 0.1));
+            border-color: var(--dark-highlight, #666);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option:has(input:checked) {
+            border-color: var(--dark-highlight, #ffffff);
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.1));
+            box-shadow: 0 2px 8px var(--dark-highlight-dim, rgba(255, 255, 255, 0.2));
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option input[type="radio"]:checked + .color-swatch + span {
+            color: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option span:last-child {
+            color: #ccc;
+        }
+
+        /* Disabled color options in dark mode */
+        #braille-writer-app.high-contrast-dark .color-option.disabled {
+            opacity: 0.35;
+            pointer-events: none;
+            cursor: not-allowed;
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option.disabled .color-swatch {
+            filter: grayscale(100%);
+        }
+
+        #braille-writer-app.high-contrast-dark .color-option.disabled span:last-child {
+            color: #666;
+        }
+
+        /* Dark mode section headers */
+        #braille-writer-app.high-contrast-dark .color-section-disabled {
+            opacity: 0.35;
+        }
+
+        #braille-writer-app.high-contrast-dark .slider-setting {
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.05));
+        }
+
+        #braille-writer-app.high-contrast-dark .slider-setting label,
+        #braille-writer-app.high-contrast-dark .slider-setting span {
+            color: var(--dark-highlight, #ffffff);
         }
 
         select,
         input[type="range"],
         input[type="checkbox"] {
-            background-color: #004d56;
-            border: 1px solid #007c8a;
+            background-color: var(--brailler-gradient-end, #004d56);
+            border: 1px solid var(--brailler-gradient-start, #007c8a);
             color: #fff;
             padding: 6px;
             border-radius: 5px;
@@ -953,194 +1403,408 @@
 
         /* High Contrast Dark Mode */
         #braille-writer-app.high-contrast-dark {
-            background-color: #121212;
+            background-color: var(--dark-bg-darker, #121212);
             background-image: none;
-            border-color: #333;
+            border-color: var(--dark-bg-light, #333);
         }
 
         #braille-writer-app.high-contrast-dark .card-header {
-            background-color: #1e1e1e;
-            border-bottom-color: #333;
+            background-color: var(--dark-bg, #1e1e1e);
+            border-bottom-color: var(--dark-bg-light, #333);
         }
 
         #braille-writer-app.high-contrast-dark .card-title {
-            color: #ffff00;
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .small-button {
-            background: #333;
-            border-color: #555;
-            color: #ffff00;
+            background: var(--dark-bg-light, #333);
+            border-color: var(--dark-bg-light, #555);
+            color: var(--dark-highlight, #ffffff);
             text-shadow: none;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
         }
 
         #braille-writer-app.high-contrast-dark .small-button:hover {
-            background: #444;
+            background: var(--dark-bg-element, #444);
         }
 
         #braille-writer-app.high-contrast-dark .small-button:active {
-            background: #222;
+            background: var(--dark-bg-element, #222);
         }
 
         #braille-writer-app.high-contrast-dark .braille-grid {
-            background-color: #000000;
-            border-color: #444;
+            background-color: var(--dark-bg-darker, #000000);
+            border-color: var(--dark-bg-light, #444);
         }
 
         #braille-writer-app.high-contrast-dark .braille-dot-active {
-            background: #ffff00;
-            border-color: #ffff00;
-            box-shadow: 0 0 5px #ffff00;
+            background: var(--dark-highlight, #ffffff);
+            border-color: var(--dark-highlight, #ffffff);
+            box-shadow: 0 0 5px var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .braille-dot-inactive {
-            background: #222;
+            background: var(--dark-bg-element, #222);
             box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.5);
         }
 
         #braille-writer-app.high-contrast-dark .current-cell {
-            background: rgba(255, 255, 0, 0.1);
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.1));
         }
 
         #braille-writer-app.high-contrast-dark .current-cell::after {
+            background: var(--dark-highlight, #ffffff);
+            box-shadow: 0 0 6px var(--dark-highlight, #ffffff);
+        }
+
+        /* Dark mode highlight color themes */
+        #braille-writer-app.high-contrast-dark {
+            --dark-highlight: #ffffff;
+            --dark-highlight-dim: rgba(255, 255, 255, 0.1);
+        }
+
+        #braille-writer-app.high-contrast-dark.highlight-yellow {
+            --dark-highlight: #ffff00;
+            --dark-highlight-dim: rgba(255, 255, 0, 0.1);
+        }
+
+        #braille-writer-app.high-contrast-dark.highlight-buff {
+            --dark-highlight: #f0e6d6;
+            --dark-highlight-dim: rgba(240, 230, 214, 0.1);
+        }
+
+        /* Dark mode background themes */
+        #braille-writer-app.high-contrast-dark.dark-bg-slate {
+            --dark-bg: #1e2631;
+            --dark-bg-light: #2d3748;
+            --dark-bg-darker: #141a23;
+            --dark-bg-element: #252f3d;
+        }
+
+        /* Dark mode paper color themes */
+        #braille-writer-app.high-contrast-dark.dark-paper-dark-grey .braille-grid {
+            background-color: #1a1a1a;
+        }
+        #braille-writer-app.high-contrast-dark.dark-paper-dark-grey .braille-dot-inactive {
+            background: #0d0d0d;
+        }
+        
+        #braille-writer-app.high-contrast-dark.dark-paper-slate .braille-grid {
+            background-color: #1e2631;
+        }
+        #braille-writer-app.high-contrast-dark.dark-paper-slate .braille-dot-inactive {
+            background: #141a23;
+        }
+
+        /* Dark mode dot color themes */
+        #braille-writer-app.high-contrast-dark.dark-dot-white .braille-dot-active {
+            background: #ffffff;
+            border-color: #ffffff;
+            box-shadow: 0 0 5px #ffffff;
+        }
+        #braille-writer-app.high-contrast-dark.dark-dot-white .current-cell::after {
+            background: #ffffff;
+            box-shadow: 0 0 6px #ffffff;
+        }
+        
+        #braille-writer-app.high-contrast-dark.dark-dot-yellow .braille-dot-active {
+            background: #ffff00;
+            border-color: #ffff00;
+            box-shadow: 0 0 5px #ffff00;
+        }
+        #braille-writer-app.high-contrast-dark.dark-dot-yellow .current-cell::after {
             background: #ffff00;
             box-shadow: 0 0 6px #ffff00;
+        }
+        
+        #braille-writer-app.high-contrast-dark.dark-dot-cyan .braille-dot-active {
+            background: #00ffff;
+            border-color: #00ffff;
+            box-shadow: 0 0 5px #00ffff;
+        }
+        #braille-writer-app.high-contrast-dark.dark-dot-cyan .current-cell::after {
+            background: #00ffff;
+            box-shadow: 0 0 6px #00ffff;
+        }
+
+        #braille-writer-app.high-contrast-dark .status-header {
+            background: var(--dark-bg, #111);
+            border-bottom-color: var(--dark-bg-light, #333);
+        }
+
+        #braille-writer-app.high-contrast-dark .status-title {
+            color: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .status-title svg {
+            stroke: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .status-indicator {
+            background: var(--dark-bg, #1a1a1a);
+            border-color: var(--dark-bg-light, #333);
+            color: #fff;
+        }
+
+        #braille-writer-app.high-contrast-dark .status-indicator svg {
+            stroke: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .mode-badge {
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.2));
+            color: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .mode-badge.erase {
+            background: rgba(255, 0, 0, 0.3);
+            color: #ff6666;
         }
 
         #braille-writer-app.high-contrast-dark .slider-container,
         #braille-writer-app.high-contrast-dark .key-container {
-            background: #1e1e1e;
+            background: var(--dark-bg, #1e1e1e);
+        }
+
+        #braille-writer-app.high-contrast-dark .slider-label {
+            color: #999;
+        }
+
+        #braille-writer-app.high-contrast-dark .cell-count-label {
+            color: #999;
+        }
+
+        #braille-writer-app.high-contrast-dark .cell-count-value {
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .slider {
-            background: #000;
+            background: var(--dark-bg-darker, #000);
         }
 
         #braille-writer-app.high-contrast-dark .slider::-webkit-slider-thumb {
-            background: #ffff00;
-            border-color: #333;
+            background: var(--dark-highlight, #ffffff);
+            border-color: var(--dark-bg-light, #333);
         }
 
         #braille-writer-app.high-contrast-dark .cell-count {
-            color: #ffff00;
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .key {
-            background: #222;
-            color: #ffff00;
-            border-color: #444;
+            background: var(--dark-bg-element, #222);
+            color: var(--dark-highlight, #ffffff);
+            border-color: var(--dark-bg-light, #444);
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1);
-            outline: 2px solid #ffffff;
+            outline: 2px solid var(--dark-highlight, #ffffff);
             outline-offset: -2px;
         }
 
+        #braille-writer-app.high-contrast-dark .key .key-hint {
+            color: var(--dark-highlight, #ffffff);
+            opacity: 0.6;
+        }
+
+        /* Dark mode dot markers for left hand keys (::before) */
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="1"]::before,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="2"]::before,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="3"]::before {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 0.5;
+            box-shadow: 0 0 6px var(--dark-highlight-dim, rgba(255, 255, 255, 0.3));
+        }
+
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="1"].pressed::before,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="2"].pressed::before,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="3"].pressed::before {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 1;
+            box-shadow: 0 0 12px var(--dark-highlight-dim, rgba(255, 255, 255, 0.8));
+        }
+
+        /* Dark mode dot markers for right hand keys (::after) */
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="4"]::after,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="5"]::after,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="6"]::after {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 0.5;
+            box-shadow: 0 0 6px var(--dark-highlight-dim, rgba(255, 255, 255, 0.3));
+        }
+
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="4"].pressed::after,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="5"].pressed::after,
+        #braille-writer-app.high-contrast-dark .key.dot-key[data-dot="6"].pressed::after {
+            background: var(--dark-highlight, #ffffff);
+            opacity: 1;
+            box-shadow: 0 0 12px var(--dark-highlight-dim, rgba(255, 255, 255, 0.8));
+        }
+
         #braille-writer-app.high-contrast-dark .key:hover {
-            background: #333;
+            background: var(--dark-bg-light, #333);
         }
 
         #braille-writer-app.high-contrast-dark .key:active {
-            background: #111;
+            background: var(--dark-bg-darker, #111);
         }
 
         /* High contrast pressed state */
         #braille-writer-app.high-contrast-dark .key.pressed {
-            background: #2a2a3a;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 6px rgba(255, 255, 0, 0.2);
-            border-color: #3a3a4a;
+            background: var(--dark-bg-element, #2a2a3a);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.1), 0 0 6px var(--dark-highlight-dim, rgba(255, 255, 255, 0.2));
+            border-color: var(--dark-bg-light, #3a3a4a);
         }
 
         #braille-writer-app.high-contrast-dark .instructions-drawer {
-            background: #1e1e1e;
-            border-top-color: #333;
+            background: var(--dark-bg, #1e1e1e);
+            border-top-color: var(--dark-bg-light, #333);
         }
 
         #braille-writer-app.high-contrast-dark .instructions-toggle {
-            background: #121212;
-            border-bottom-color: #333;
-            color: #ffff00;
+            background: var(--dark-bg-darker, #121212);
+            border-bottom-color: var(--dark-bg-light, #333);
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .instructions-content {
-            color: #ffff00;
+            color: var(--dark-highlight, #ffffff);
+            scrollbar-color: var(--dark-highlight, rgba(255, 255, 255, 0.5)) rgba(0, 0, 0, 0.3);
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content::-webkit-scrollbar-track {
+            background: var(--dark-bg-darker, rgba(0, 0, 0, 0.3));
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content::-webkit-scrollbar-thumb {
+            background: var(--dark-highlight, rgba(255, 255, 255, 0.5));
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-highlight, rgba(255, 255, 255, 0.7));
+        }
+
+        /* Dark mode menu headings - override inline styles */
+        #braille-writer-app.high-contrast-dark .instructions-content h2 {
+            color: var(--dark-highlight, #ffffff) !important;
+            border-bottom-color: var(--dark-highlight-dim, rgba(255, 255, 255, 0.3)) !important;
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content h3 {
+            color: var(--dark-highlight, #ffffff) !important;
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content p,
+        #braille-writer-app.high-contrast-dark .instructions-content li,
+        #braille-writer-app.high-contrast-dark .instructions-content span {
+            color: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-content strong {
+            color: var(--dark-highlight, #ffffff);
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-close-btn {
+            color: var(--dark-highlight, #ffffff);
+            background: var(--dark-bg-element, rgba(255, 255, 255, 0.1));
+        }
+
+        #braille-writer-app.high-contrast-dark .instructions-close-btn:hover {
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.2));
         }
 
         #braille-writer-app.high-contrast-dark .settings {
-            background-color: #121212;
-            border-color: #333;
+            background-color: var(--dark-bg-darker, #121212);
+            border-color: var(--dark-bg-light, #333);
+        }
+
+        #braille-writer-app.high-contrast-dark .settings label {
+            color: var(--dark-highlight, #ffffff) !important;
+        }
+
+        #braille-writer-app.high-contrast-dark .settings strong {
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark select,
         #braille-writer-app.high-contrast-dark input[type="range"],
         #braille-writer-app.high-contrast-dark input[type="checkbox"] {
-            background-color: #000;
-            border-color: #444;
-            color: #ffff00;
+            background-color: var(--dark-bg-darker, #000);
+            border-color: var(--dark-bg-light, #444);
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark input[type="checkbox"] {
-            accent-color: #ffff00;
+            accent-color: var(--dark-highlight, #ffffff);
         }
 
         /* Dark mode for side toolbar */
         #braille-writer-app.high-contrast-dark .side-toolbar {
-            background: linear-gradient(180deg, #1a1a1a, #0a0a0a);
-            border-right-color: #333;
+            background: var(--dark-bg, #0f0f0f);
+            border-right-color: var(--dark-bg-light, #333);
+            scrollbar-color: var(--dark-highlight, rgba(255, 255, 255, 0.5)) rgba(0, 0, 0, 0.3);
+        }
+
+        #braille-writer-app.high-contrast-dark .side-toolbar::-webkit-scrollbar-thumb {
+            background: var(--dark-highlight, rgba(255, 255, 255, 0.5));
+        }
+
+        #braille-writer-app.high-contrast-dark .side-toolbar::-webkit-scrollbar-thumb:hover {
+            background: var(--dark-highlight, rgba(255, 255, 255, 0.7));
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-title {
-            color: #ffff00;
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-btn {
-            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
-            border-color: #444;
-            color: #ffff00;
+            background: var(--dark-bg-element, #2a2a2a);
+            border-color: var(--dark-bg-light, #444);
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-btn:hover {
-            background: linear-gradient(135deg, #3a3a3a, #2a2a2a);
+            background: var(--dark-bg-light, #3a3a3a);
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-btn.active {
-            background: linear-gradient(135deg, #444, #333);
-            border-color: #ffff00;
+            background: var(--dark-bg-light, #444);
+            border-color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-btn svg {
-            stroke: #ffff00;
+            stroke: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .toolbar-divider {
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 0, 0.3), transparent);
+            background: var(--dark-bg-light, #333);
+            height: 1px;
         }
 
         /* Dark mode for Feed Knob navigation button */
         #braille-writer-app.high-contrast-dark .toolbar-nav-btn {
-            background: linear-gradient(135deg, rgba(50, 50, 50, 0.9), rgba(30, 30, 30, 0.9));
-            border-color: #555;
+            background: var(--dark-bg-element, #2a2a2a);
+            border-color: var(--dark-bg-light, #555);
         }
 
         #braille-writer-app.high-contrast-dark .nav-half {
-            color: #ffff00;
+            color: var(--dark-highlight, #ffffff);
         }
 
         #braille-writer-app.high-contrast-dark .nav-half:hover {
-            background: rgba(255, 255, 0, 0.2);
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.2));
         }
 
         #braille-writer-app.high-contrast-dark .nav-half:active {
-            background: rgba(255, 255, 0, 0.1);
+            background: var(--dark-highlight-dim, rgba(255, 255, 255, 0.1));
         }
 
         #braille-writer-app.high-contrast-dark .nav-label {
-            color: #ffff00;
-            background: rgba(0, 0, 0, 0.5);
-            border-top-color: rgba(255, 255, 0, 0.2);
+            color: var(--dark-highlight, #ffffff);
+            background: var(--dark-bg-darker, rgba(0, 0, 0, 0.5));
+            border-top-color: var(--dark-bg-light, rgba(255, 255, 255, 0.2));
         }
 
         #braille-writer-app.high-contrast-dark .nav-up {
-            border-bottom-color: rgba(255, 255, 0, 0.2);
+            border-bottom-color: var(--dark-bg-light, rgba(255, 255, 255, 0.2));
         }
 
         /* Rotary Handles */
@@ -1248,6 +1912,31 @@
                 height: 14px;
             }
 
+            /* Status header responsive */
+            .status-header {
+                padding: 6px 12px;
+                gap: 8px;
+            }
+
+            .status-title {
+                font-size: 12px;
+            }
+
+            .status-title svg {
+                width: 16px;
+                height: 16px;
+            }
+
+            .status-indicator {
+                font-size: 11px;
+                padding: 3px 8px;
+            }
+
+            .mode-badge {
+                font-size: 9px;
+                padding: 2px 6px;
+            }
+
             .key-container {
                 gap: 5px;
                 /* Tighter gap on tablet */
@@ -1307,6 +1996,41 @@
             .toolbar-divider {
                 width: 60%;
                 margin: 2px 0;
+            }
+
+            /* Status header mobile */
+            .status-header {
+                padding: 4px 8px;
+                gap: 6px;
+            }
+
+            .status-title {
+                font-size: 11px;
+                gap: 4px;
+            }
+
+            .status-title svg {
+                width: 14px;
+                height: 14px;
+            }
+
+            .status-indicators {
+                gap: 8px;
+            }
+
+            .status-indicator {
+                font-size: 10px;
+                padding: 2px 6px;
+            }
+
+            .status-indicator svg {
+                width: 12px;
+                height: 12px;
+            }
+
+            .mode-badge {
+                font-size: 8px;
+                padding: 2px 5px;
             }
 
             .key.dot-key {
@@ -1564,17 +2288,17 @@
         }
 
         .splash-modal {
-            background: linear-gradient(145deg, #007c8a, #004d56);
+            background: linear-gradient(145deg, var(--brailler-gradient-start, #007c8a), var(--brailler-gradient-end, #004d56));
             border-radius: 20px;
             max-width: 600px;
             width: 90%;
             max-height: 85vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px rgba(0, 124, 138, 0.3);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 40px var(--accent-glow, rgba(0, 124, 138, 0.3));
             border: 2px solid rgba(255, 255, 255, 0.15);
             animation: splashAppear 0.5s ease-out;
             scrollbar-width: thin;
-            scrollbar-color: rgba(79, 209, 197, 0.5) rgba(0, 0, 0, 0.2);
+            scrollbar-color: var(--accent-color-dim, rgba(79, 209, 197, 0.5)) rgba(0, 0, 0, 0.2);
             position: relative;
         }
 
@@ -1614,15 +2338,96 @@
         }
 
         .splash-modal::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.6), rgba(56, 178, 172, 0.6));
+            background: var(--accent-color-dim, rgba(79, 209, 197, 0.6));
             border-radius: 10px;
             border: 2px solid transparent;
             background-clip: padding-box;
         }
 
         .splash-modal::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, rgba(79, 209, 197, 0.8), rgba(56, 178, 172, 0.8));
+            background: var(--accent-color, rgba(79, 209, 197, 0.8));
             background-clip: padding-box;
+        }
+
+        /* Dark mode splash screen */
+        body.dark-mode-splash .splash-overlay {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        body.dark-mode-splash .splash-modal {
+            background: linear-gradient(145deg, #1a1a1a, #0d0d0d);
+            border-color: #444;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 255, 255, 0.1);
+            scrollbar-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.3);
+        }
+
+        body.dark-mode-splash .splash-modal::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        body.dark-mode-splash .splash-modal::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.7);
+        }
+
+        body.dark-mode-splash .splash-close-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ffffff;
+        }
+
+        body.dark-mode-splash .splash-close-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        body.dark-mode-splash .splash-header {
+            border-bottom-color: #333;
+        }
+
+        body.dark-mode-splash .splash-header h1 {
+            color: #ffffff;
+        }
+
+        body.dark-mode-splash .splash-header .subtitle {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        body.dark-mode-splash .splash-content h2 {
+            color: #ffffff;
+        }
+
+        body.dark-mode-splash .splash-content h2 svg {
+            stroke: #ffffff;
+        }
+
+        body.dark-mode-splash .splash-content p,
+        body.dark-mode-splash .splash-content li {
+            color: #ccc;
+        }
+
+        body.dark-mode-splash .key-reference {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: #444;
+        }
+
+        body.dark-mode-splash .key-item code {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff;
+        }
+
+        body.dark-mode-splash .splash-footer {
+            border-top-color: #333;
+        }
+
+        body.dark-mode-splash .start-btn {
+            background: linear-gradient(135deg, #ffffff, #cccccc);
+            color: #000;
+        }
+
+        body.dark-mode-splash .start-btn:hover {
+            background: linear-gradient(135deg, #ffffff, #e0e0e0);
+        }
+
+        body.dark-mode-splash .splash-footer label {
+            color: #ccc;
         }
 
         @keyframes splashAppear {
@@ -1748,13 +2553,13 @@
 
         .splash-btn-primary {
             background: linear-gradient(135deg, #4fd1c5, #38b2ac);
-            color: #004d56;
-            box-shadow: 0 4px 15px rgba(79, 209, 197, 0.4);
+            color: var(--brailler-gradient-end, #004d56);
+            box-shadow: 0 4px 15px var(--accent-glow, rgba(79, 209, 197, 0.4));
         }
 
         .splash-btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(79, 209, 197, 0.5);
+            box-shadow: 0 6px 20px var(--accent-color-dim, rgba(79, 209, 197, 0.5));
         }
 
         .splash-btn-secondary {
@@ -1882,6 +2687,18 @@
 </head>
 
 <body>
+    <script>
+        // Apply dark mode to body immediately if saved in preferences (before splash renders)
+        try {
+            const saved = localStorage.getItem('brailleWriter_preferences');
+            if (saved) {
+                const prefs = JSON.parse(saved);
+                if (prefs.darkMode) {
+                    document.body.classList.add('dark-mode-splash');
+                }
+            }
+        } catch (e) {}
+    </script>
     <!-- Splash Screen / Welcome Modal -->
     <div id="splash-overlay" class="splash-overlay">
         <div class="splash-modal">
@@ -1969,9 +2786,6 @@
     <div id="braille-writer-app" class="card" tabindex="-1">
         <!-- Side Toolbar -->
         <div class="side-toolbar">
-            <span class="toolbar-title">Braille Writer</span>
-            <div class="toolbar-divider"></div>
-
             <!-- Combined Line Navigation Button -->
             <div class="toolbar-nav-btn" title="Paper Feed Knob">
                 <button id="line-up-btn" class="nav-half nav-up" title="Move Up One Line">
@@ -2080,6 +2894,18 @@
                 <span>Dark</span>
             </button>
 
+            <!-- Colors Button -->
+            <button id="colors-btn" class="toolbar-btn" title="Color Options">
+                <svg viewBox="0 0 24 24">
+                    <circle cx="13.5" cy="6.5" r="2.5"/>
+                    <circle cx="17.5" cy="10.5" r="2.5"/>
+                    <circle cx="8.5" cy="7.5" r="2.5"/>
+                    <circle cx="6.5" cy="12.5" r="2.5"/>
+                    <path d="M12 22c-5.52 0-10-4.48-10-10s4.48-10 10-10 10 4.48 10 10-4.48 10-10 10zm5.5-15.5c-1.38 0-2.5 1.12-2.5 2.5s1.12 2.5 2.5 2.5 2.5-1.12 2.5-2.5-1.12-2.5-2.5-2.5z" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>Colors</span>
+            </button>
+
             <!-- Settings/Help Button -->
             <button id="settings-btn" class="toolbar-btn" title="Instructions & Settings">
                 <svg viewBox="0 0 24 24">
@@ -2094,6 +2920,21 @@
 
         <!-- Main Content Area -->
         <div class="main-content">
+            <!-- Status Header -->
+            <div class="status-header">
+                <div class="status-title">
+                    <svg viewBox="0 0 24 24"><circle cx="5" cy="5" r="2"/><circle cx="5" cy="12" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                    Braille Writer
+                </div>
+                <div class="status-indicators">
+                    <span id="mode-indicator" class="mode-badge hidden">Erase</span>
+                    <div class="status-indicator" id="position-indicator">
+                        <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                        <span id="quick-position">P1 L1 C1</span>
+                    </div>
+                </div>
+            </div>
+
             <div class="rotary-handle left-handle">
                 <div id="left-handle-up" class="handle-part handle-up"></div>
                 <div id="left-handle-down" class="handle-part handle-down"></div>
@@ -2109,7 +2950,6 @@
             <!-- Slider below viewport -->
             <div class="slider-container">
                 <input type="range" id="slider" min="0" max="30" value="0" class="slider">
-                <div id="cell-count" class="cell-count">Cell: 1 / 31</div>
             </div>
 
             <!-- Resizer bar - drag to adjust space between viewport and keys -->
@@ -2123,15 +2963,36 @@
 
             <!-- Keys below slider -->
             <div class="key-container">
-                <button class="key round-key" id="linespace-btn">LS (a)</button>
-                <button class="key dot-key" id="dot3-btn">3 (s)</button>
-                <button class="key dot-key" id="dot2-btn">2 (d)</button>
-                <button class="key dot-key" id="dot1-btn">1 (f)</button>
-                <button class="key space-key" id="space-btn">Space (G/H)</button>
-                <button class="key dot-key" id="dot4-btn">4 (j)</button>
-                <button class="key dot-key" id="dot5-btn">5 (k)</button>
-                <button class="key dot-key" id="dot6-btn">6 (l)</button>
-                <button class="key round-key" id="backspace-btn">BS (;)</button>
+                <button class="key round-key" id="linespace-btn" aria-label="Line Space, keyboard A">
+                    <span class="key-main">LS</span>
+                    <span class="key-hint">A</span>
+                </button>
+                <button class="key dot-key" id="dot3-btn" data-dot="3" aria-label="Dot 3, keyboard S">
+                    <span class="key-main">S</span>
+                </button>
+                <button class="key dot-key" id="dot2-btn" data-dot="2" aria-label="Dot 2, keyboard D">
+                    <span class="key-main">D</span>
+                </button>
+                <button class="key dot-key" id="dot1-btn" data-dot="1" aria-label="Dot 1, keyboard F">
+                    <span class="key-main">F</span>
+                </button>
+                <button class="key space-key" id="space-btn" aria-label="Space, keyboard G or H">
+                    <span class="key-main">Space</span>
+                    <span class="key-hint">G / H</span>
+                </button>
+                <button class="key dot-key" id="dot4-btn" data-dot="4" aria-label="Dot 4, keyboard J">
+                    <span class="key-main">J</span>
+                </button>
+                <button class="key dot-key" id="dot5-btn" data-dot="5" aria-label="Dot 5, keyboard K">
+                    <span class="key-main">K</span>
+                </button>
+                <button class="key dot-key" id="dot6-btn" data-dot="6" aria-label="Dot 6, keyboard L">
+                    <span class="key-main">L</span>
+                </button>
+                <button class="key round-key" id="backspace-btn" aria-label="Backspace, keyboard semicolon">
+                    <span class="key-main">BS</span>
+                    <span class="key-hint">;</span>
+                </button>
             </div>
 
             <!-- Instructions drawer -->
@@ -2184,6 +3045,175 @@
                         <div class="volume-settings">
                             <label for="volume-control">Sound Volume:</label>
                             <input type="range" id="volume-control" min="0" max="100" value="20">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Colors drawer -->
+            <div id="colors-drawer" class="instructions-drawer">
+                <button id="colors-close" class="instructions-close-btn" title="Close">×</button>
+                <button id="colors-toggle" class="instructions-toggle">Color Options</button>
+                <div class="instructions-content">
+                    <h2 style="margin: 0 0 15px 0; color: #4fd1c5; font-size: 1.3em; border-bottom: 1px solid rgba(79, 209, 197, 0.3); padding-bottom: 10px;">Customize Colors</h2>
+                    
+                    <!-- Dark mode highlight colors section -->
+                    <div id="highlight-color-section" class="color-section" style="display: none;">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Highlight Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="highlight-color" value="white" checked>
+                                <span class="color-swatch" style="background: #ffffff; border: 1px solid #666;"></span>
+                                <span>White (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="highlight-color" value="buff">
+                                <span class="color-swatch" style="background: #f0e6d6; border: 1px solid #666;"></span>
+                                <span>Buff</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="highlight-color" value="yellow">
+                                <span class="color-swatch" style="background: #ffff00;"></span>
+                                <span>Yellow</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Dark mode background color section -->
+                    <div id="dark-bg-section" class="color-section" style="display: none;">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Background</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="dark-bg" value="black" checked>
+                                <span class="color-swatch" style="background: #111; border: 1px solid #444;"></span>
+                                <span>Black (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-bg" value="slate">
+                                <span class="color-swatch" style="background: #2d3748; border: 1px solid #4a5568;"></span>
+                                <span>Slate Grey</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Dark mode paper color section -->
+                    <div id="dark-paper-section" class="color-section" style="display: none;">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Paper Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="dark-paper" value="black" checked>
+                                <span class="color-swatch" style="background: #000; border: 1px solid #444;"></span>
+                                <span>Black (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-paper" value="dark-grey">
+                                <span class="color-swatch" style="background: #1a1a1a; border: 1px solid #444;"></span>
+                                <span>Dark Grey</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-paper" value="slate">
+                                <span class="color-swatch" style="background: #1e2631; border: 1px solid #2d3748;"></span>
+                                <span>Slate</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Dark mode dot color section -->
+                    <div id="dark-dot-section" class="color-section" style="display: none;">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Dot Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="dark-dot" value="highlight" checked>
+                                <span class="color-swatch dark-dot-highlight-swatch" style="background: var(--dark-highlight, #ffffff); border: 1px solid #666;"></span>
+                                <span>Highlight Color (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-dot" value="white">
+                                <span class="color-swatch" style="background: #ffffff; border: 1px solid #666;"></span>
+                                <span>White</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-dot" value="yellow">
+                                <span class="color-swatch" style="background: #ffff00;"></span>
+                                <span>Yellow</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dark-dot" value="cyan">
+                                <span class="color-swatch" style="background: #00ffff;"></span>
+                                <span>Cyan</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="brailler-color-section" class="color-section">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Brailler Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="brailler-color" value="green" checked>
+                                <span class="color-swatch" style="background: linear-gradient(145deg, #007c8a, #004d56);"></span>
+                                <span>Green (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="brailler-color" value="blue">
+                                <span class="color-swatch" style="background: linear-gradient(145deg, #2c5282, #1a365d);"></span>
+                                <span>Blue</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="brailler-color" value="grey">
+                                <span class="color-swatch" style="background: linear-gradient(145deg, #718096, #2d3748);"></span>
+                                <span>Grey</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="paper-color-section" class="color-section">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Paper Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="paper-color" value="buff" checked>
+                                <span class="color-swatch" style="background: #f0e6d6;"></span>
+                                <span>Buff (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="paper-color" value="dark-buff">
+                                <span class="color-swatch" style="background: #d4c4a8;"></span>
+                                <span>Dark Buff</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="paper-color" value="white">
+                                <span class="color-swatch" style="background: #ffffff; border: 1px solid #ccc;"></span>
+                                <span>White</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="paper-color" value="light-grey">
+                                <span class="color-swatch" style="background: #e8e8e8;"></span>
+                                <span>Light Grey</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="dot-color-section" class="color-section">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Embossed Dot Color</h3>
+                        <div class="color-options">
+                            <label class="color-option">
+                                <input type="radio" name="dot-color" value="grey" checked>
+                                <span class="color-swatch" style="background: #4a4a4a;"></span>
+                                <span>Grey (Default)</span>
+                            </label>
+                            <label class="color-option">
+                                <input type="radio" name="dot-color" value="black">
+                                <span class="color-swatch" style="background: #000000;"></span>
+                                <span>Black</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="placeholder-section" class="color-section">
+                        <h3 style="margin: 15px 0 10px 0; color: #81e6d9; font-size: 1em;">Dot Placeholder Visibility</h3>
+                        <div class="slider-setting">
+                            <label for="placeholder-opacity">Opacity:</label>
+                            <input type="range" id="placeholder-opacity" min="0" max="100" value="100">
+                            <span id="opacity-value">100%</span>
                         </div>
                     </div>
                 </div>
@@ -2273,13 +3303,30 @@
 
         function savePreferences() {
             try {
+                const appElement = document.getElementById('braille-writer-app');
                 const prefs = {
                     bellWarningSpaces,
                     isBellEnabled,
                     isKeySoundEnabled,
                     isMuted,
                     volume: parseInt(volumeControl.value, 10),
-                    darkMode: document.getElementById('braille-writer-app').classList.contains('high-contrast-dark')
+                    darkMode: appElement.classList.contains('high-contrast-dark'),
+                    // Color settings
+                    braillerColor: appElement.classList.contains('brailler-blue') ? 'blue' : 
+                                   appElement.classList.contains('brailler-grey') ? 'grey' : 'green',
+                    paperColor: appElement.classList.contains('paper-white') ? 'white' :
+                                appElement.classList.contains('paper-dark-buff') ? 'dark-buff' :
+                                appElement.classList.contains('paper-light-grey') ? 'light-grey' : 'buff',
+                    dotColor: appElement.classList.contains('dots-black') ? 'black' : 'grey',
+                    placeholderOpacity: parseInt(document.getElementById('placeholder-opacity')?.value || 100, 10),
+                    highlightColor: appElement.classList.contains('highlight-yellow') ? 'yellow' :
+                                    appElement.classList.contains('highlight-buff') ? 'buff' : 'white',
+                    darkBgColor: appElement.classList.contains('dark-bg-slate') ? 'slate' : 'black',
+                    darkPaperColor: appElement.classList.contains('dark-paper-dark-grey') ? 'dark-grey' :
+                                    appElement.classList.contains('dark-paper-slate') ? 'slate' : 'black',
+                    darkDotColor: appElement.classList.contains('dark-dot-white') ? 'white' :
+                                  appElement.classList.contains('dark-dot-yellow') ? 'yellow' :
+                                  appElement.classList.contains('dark-dot-cyan') ? 'cyan' : 'highlight'
                 };
                 localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
             } catch (error) {
@@ -2324,6 +3371,70 @@
                     const btnSpan = darkModeBtn.querySelector('span');
                     if (btnSpan) btnSpan.textContent = 'Light';
                 }
+                
+                // Apply color settings
+                const appElement = document.getElementById('braille-writer-app');
+                if (prefs.braillerColor && prefs.braillerColor !== 'green') {
+                    appElement.classList.add('brailler-' + prefs.braillerColor);
+                    const radio = document.querySelector(`input[name="brailler-color"][value="${prefs.braillerColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                if (prefs.paperColor && prefs.paperColor !== 'buff') {
+                    appElement.classList.add('paper-' + prefs.paperColor);
+                    const radio = document.querySelector(`input[name="paper-color"][value="${prefs.paperColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                if (prefs.dotColor && prefs.dotColor !== 'grey') {
+                    appElement.classList.add('dots-' + prefs.dotColor);
+                    const radio = document.querySelector(`input[name="dot-color"][value="${prefs.dotColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                if (typeof prefs.placeholderOpacity === 'number') {
+                    const slider = document.getElementById('placeholder-opacity');
+                    const valueDisplay = document.getElementById('opacity-value');
+                    if (slider) {
+                        slider.value = prefs.placeholderOpacity;
+                        appElement.style.setProperty('--dot-inactive-opacity', prefs.placeholderOpacity / 100);
+                    }
+                    if (valueDisplay) valueDisplay.textContent = prefs.placeholderOpacity + '%';
+                }
+                
+                // Apply highlight color (for dark mode) - white is now default
+                if (prefs.highlightColor && prefs.highlightColor !== 'white') {
+                    appElement.classList.add('highlight-' + prefs.highlightColor);
+                    const radio = document.querySelector(`input[name="highlight-color"][value="${prefs.highlightColor}"]`);
+                    if (radio) radio.checked = true;
+                    // Update the "Highlight Color" dot swatch to match
+                    const highlightSwatch = document.querySelector('.dark-dot-highlight-swatch');
+                    if (highlightSwatch) {
+                        const colors = { yellow: '#ffff00', buff: '#f0e6d6' };
+                        highlightSwatch.style.background = colors[prefs.highlightColor] || '#ffffff';
+                    }
+                }
+                
+                // Apply dark background color (for dark mode)
+                if (prefs.darkBgColor && prefs.darkBgColor !== 'black') {
+                    appElement.classList.add('dark-bg-' + prefs.darkBgColor);
+                    const radio = document.querySelector(`input[name="dark-bg"][value="${prefs.darkBgColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                
+                // Apply dark paper color (for dark mode)
+                if (prefs.darkPaperColor && prefs.darkPaperColor !== 'black') {
+                    appElement.classList.add('dark-paper-' + prefs.darkPaperColor);
+                    const radio = document.querySelector(`input[name="dark-paper"][value="${prefs.darkPaperColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                
+                // Apply dark dot color (for dark mode)
+                if (prefs.darkDotColor && prefs.darkDotColor !== 'highlight') {
+                    appElement.classList.add('dark-dot-' + prefs.darkDotColor);
+                    const radio = document.querySelector(`input[name="dark-dot"][value="${prefs.darkDotColor}"]`);
+                    if (radio) radio.checked = true;
+                }
+                
+                // Update color options availability based on dark mode state
+                updateColorOptionsForDarkMode(prefs.darkMode || false);
             } catch (error) {
                 console.warn('Failed to load preferences:', error);
             }
@@ -2414,10 +3525,16 @@
         // --- Core Application Logic ---
         function updateCellCount() {
             try {
-                if (cellCount && cursor) {
+                if (cursor) {
                     const page = getPageNumber(cursor.row);
                     const lineOnPage = (cursor.row % LINES_PER_PAGE) + 1;
-                    cellCount.textContent = `P${page} L${lineOnPage} | Cell: ${cursor.col + 1}/${COLS}`;
+                    const cellNum = cursor.col + 1;
+                    
+                    // Update quick position indicator in status header
+                    const quickPos = document.getElementById('quick-position');
+                    if (quickPos) {
+                        quickPos.textContent = `P${page} L${lineOnPage} C${cellNum}`;
+                    }
                 }
             } catch (error) {
                 console.error('Error updating cell count:', error);
@@ -2868,6 +3985,61 @@
             }
         }
 
+        // --- Dark Mode Color Options Management ---
+        function updateColorOptionsForDarkMode(isDarkMode) {
+            const highlightSection = document.getElementById('highlight-color-section');
+            const darkBgSection = document.getElementById('dark-bg-section');
+            const darkPaperSection = document.getElementById('dark-paper-section');
+            const darkDotSection = document.getElementById('dark-dot-section');
+            const braillerSection = document.getElementById('brailler-color-section');
+            const paperSection = document.getElementById('paper-color-section');
+            const dotSection = document.getElementById('dot-color-section');
+            const placeholderSection = document.getElementById('placeholder-section');
+            
+            if (isDarkMode) {
+                // Show dark mode color options
+                if (highlightSection) highlightSection.style.display = 'block';
+                if (darkBgSection) darkBgSection.style.display = 'block';
+                if (darkPaperSection) darkPaperSection.style.display = 'block';
+                if (darkDotSection) darkDotSection.style.display = 'block';
+                
+                // Grey out unavailable sections
+                if (braillerSection) {
+                    braillerSection.classList.add('color-section-disabled');
+                    braillerSection.querySelectorAll('.color-option').forEach(opt => opt.classList.add('disabled'));
+                }
+                if (paperSection) {
+                    paperSection.classList.add('color-section-disabled');
+                    paperSection.querySelectorAll('.color-option').forEach(opt => opt.classList.add('disabled'));
+                }
+                if (dotSection) {
+                    dotSection.classList.add('color-section-disabled');
+                    dotSection.querySelectorAll('.color-option').forEach(opt => opt.classList.add('disabled'));
+                }
+                // Note: placeholderSection is NOT disabled - it works in dark mode too
+            } else {
+                // Hide dark mode color options
+                if (highlightSection) highlightSection.style.display = 'none';
+                if (darkBgSection) darkBgSection.style.display = 'none';
+                if (darkPaperSection) darkPaperSection.style.display = 'none';
+                if (darkDotSection) darkDotSection.style.display = 'none';
+                
+                // Re-enable sections
+                if (braillerSection) {
+                    braillerSection.classList.remove('color-section-disabled');
+                    braillerSection.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('disabled'));
+                }
+                if (paperSection) {
+                    paperSection.classList.remove('color-section-disabled');
+                    paperSection.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('disabled'));
+                }
+                if (dotSection) {
+                    dotSection.classList.remove('color-section-disabled');
+                    dotSection.querySelectorAll('.color-option').forEach(opt => opt.classList.remove('disabled'));
+                }
+            }
+        }
+
         // --- UI Feedback ---
         function showToast(message, isError = false) {
             try {
@@ -3249,6 +4421,15 @@
 
                 allClearBtn.addEventListener('click', () => {
                     try {
+                        // Remove cursor from old position before clearing
+                        if (lastCursor.row >= 0 && lastCursor.col >= 0 && 
+                            cellElements[lastCursor.row]?.[lastCursor.col]) {
+                            cellElements[lastCursor.row][lastCursor.col].cellEl.classList.remove('current-cell');
+                        }
+                        if (cellElements[cursor.row]?.[cursor.col]) {
+                            cellElements[cursor.row][cursor.col].cellEl.classList.remove('current-cell');
+                        }
+                        
                         grid = Array.from({ length: ROWS }, () => Array.from({ length: COLS }, () => [...EMPTY_CELL]));
                         cursor = { row: 0, col: 0 };
                         lastCursor = { row: -1, col: -1 }; // Reset last cursor position
@@ -3272,6 +4453,14 @@
                         eraseModeBtn.classList.toggle('active', isEraseMode);
                         eraseModeBtn.classList.toggle('erase-active', isEraseMode);
                         brailleGrid.classList.toggle('erase-mode', isEraseMode);
+                        
+                        // Update mode indicator in status header
+                        const modeIndicator = document.getElementById('mode-indicator');
+                        if (modeIndicator) {
+                            modeIndicator.classList.toggle('hidden', !isEraseMode);
+                            modeIndicator.classList.toggle('erase', isEraseMode);
+                        }
+                        
                         showToast(isEraseMode ? 'Erase mode enabled' : 'Erase mode disabled');
                     } catch (error) {
                         console.error('Failed to toggle erase mode:', error);
@@ -3332,6 +4521,10 @@
                         }
 
                         darkModeBtn.classList.toggle('active', isDarkMode);
+                        
+                        // Update color options availability
+                        updateColorOptionsForDarkMode(isDarkMode);
+                        
                         savePreferences();
                         showToast(isDarkMode ? 'High contrast dark mode enabled' : 'Light mode enabled');
                     } catch (error) {
@@ -3525,6 +4718,13 @@
                     settingsBtn.addEventListener('click', () => {
                         try {
                             const instructionsDrawer = document.getElementById('instructions-drawer');
+                            const colorsDrawer = document.getElementById('colors-drawer');
+                            // Close colors drawer if open
+                            if (colorsDrawer && colorsDrawer.classList.contains('open')) {
+                                colorsDrawer.classList.remove('open');
+                                const colorsBtn = document.getElementById('colors-btn');
+                                if (colorsBtn) colorsBtn.classList.remove('active');
+                            }
                             if (instructionsDrawer) {
                                 instructionsDrawer.classList.toggle('open');
                                 settingsBtn.classList.toggle('active', instructionsDrawer.classList.contains('open'));
@@ -3534,6 +4734,138 @@
                         }
                     });
                 }
+
+                // Colors button and drawer
+                const colorsBtn = document.getElementById('colors-btn');
+                const colorsDrawer = document.getElementById('colors-drawer');
+                const colorsCloseBtn = document.getElementById('colors-close');
+                
+                if (colorsBtn && colorsDrawer) {
+                    colorsBtn.addEventListener('click', () => {
+                        try {
+                            const instructionsDrawer = document.getElementById('instructions-drawer');
+                            // Close instructions drawer if open
+                            if (instructionsDrawer && instructionsDrawer.classList.contains('open')) {
+                                instructionsDrawer.classList.remove('open');
+                                if (settingsBtn) settingsBtn.classList.remove('active');
+                            }
+                            colorsDrawer.classList.toggle('open');
+                            colorsBtn.classList.toggle('active', colorsDrawer.classList.contains('open'));
+                        } catch (error) {
+                            console.error('Failed to toggle colors drawer:', error);
+                        }
+                    });
+                }
+                
+                if (colorsCloseBtn) {
+                    colorsCloseBtn.addEventListener('click', () => {
+                        try {
+                            if (colorsDrawer) colorsDrawer.classList.remove('open');
+                            if (colorsBtn) colorsBtn.classList.remove('active');
+                        } catch (error) {
+                            console.error('Failed to close colors drawer:', error);
+                        }
+                    });
+                }
+
+                // Color option handlers
+                const appElement = document.getElementById('braille-writer-app');
+                
+                // Brailler color options
+                document.querySelectorAll('input[name="brailler-color"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('brailler-blue', 'brailler-grey');
+                        if (e.target.value !== 'green') {
+                            appElement.classList.add('brailler-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Paper color options
+                document.querySelectorAll('input[name="paper-color"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('paper-white', 'paper-dark-buff', 'paper-light-grey');
+                        if (e.target.value !== 'buff') {
+                            appElement.classList.add('paper-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Dot color options
+                document.querySelectorAll('input[name="dot-color"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('dots-black');
+                        if (e.target.value !== 'grey') {
+                            appElement.classList.add('dots-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Placeholder opacity slider
+                const opacitySlider = document.getElementById('placeholder-opacity');
+                const opacityValue = document.getElementById('opacity-value');
+                if (opacitySlider) {
+                    opacitySlider.addEventListener('input', (e) => {
+                        const value = parseInt(e.target.value, 10);
+                        appElement.style.setProperty('--dot-inactive-opacity', value / 100);
+                        if (opacityValue) opacityValue.textContent = value + '%';
+                        savePreferences();
+                    });
+                }
+                
+                // Highlight color options (for dark mode) - white is now default
+                document.querySelectorAll('input[name="highlight-color"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('highlight-yellow', 'highlight-buff');
+                        if (e.target.value !== 'white') {
+                            appElement.classList.add('highlight-' + e.target.value);
+                        }
+                        // Update the "Highlight Color" dot swatch to match
+                        const highlightSwatch = document.querySelector('.dark-dot-highlight-swatch');
+                        if (highlightSwatch) {
+                            const colors = { white: '#ffffff', yellow: '#ffff00', buff: '#f0e6d6' };
+                            highlightSwatch.style.background = colors[e.target.value] || '#ffffff';
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Dark mode background color options
+                document.querySelectorAll('input[name="dark-bg"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('dark-bg-slate');
+                        if (e.target.value !== 'black') {
+                            appElement.classList.add('dark-bg-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Dark mode paper color options
+                document.querySelectorAll('input[name="dark-paper"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('dark-paper-dark-grey', 'dark-paper-slate');
+                        if (e.target.value !== 'black') {
+                            appElement.classList.add('dark-paper-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+                
+                // Dark mode dot color options
+                document.querySelectorAll('input[name="dark-dot"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        appElement.classList.remove('dark-dot-white', 'dark-dot-yellow', 'dark-dot-cyan');
+                        if (e.target.value !== 'highlight') {
+                            appElement.classList.add('dark-dot-' + e.target.value);
+                        }
+                        savePreferences();
+                    });
+                });
+
                 bellWarningSelect.addEventListener('change', e => {
                     try {
                         const value = parseInt(e.target.value);
